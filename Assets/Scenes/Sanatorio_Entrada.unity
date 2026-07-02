@@ -3002,6 +3002,7 @@ GameObject:
   - component: {fileID: 1096168308}
   - component: {fileID: 1096168307}
   - component: {fileID: 1096168313}
+  - component: {fileID: 1096168314}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -3163,6 +3164,23 @@ MonoBehaviour:
   currentHealth: 100
   enableDebugKeys: 1
   damageTestKey: 107
+--- !u!114 &1096168314
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1096168306}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4e2190e005fe4c4e82e1cb69af20ad7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerDebugAttack
+  attackKey: 102
+  damage: 20
+  attackRange: 2
+  attackAngle: 70
+  showGizmos: 1
 --- !u!1 &1143833225
 GameObject:
   m_ObjectHideFlags: 0
@@ -4515,6 +4533,7 @@ GameObject:
   - component: {fileID: 1579394195}
   - component: {fileID: 1579394194}
   - component: {fileID: 1579394193}
+  - component: {fileID: 1579394198}
   m_Layer: 0
   m_Name: Enemy_Patient_01
   m_TagString: Untagged
@@ -4662,6 +4681,22 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1579394191}
   m_Mesh: {fileID: 10208, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &1579394198
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1579394191}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 799f08322c5b1b246948bde713177925, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyHealth
+  maxHealth: 60
+  currentHealth: 60
+  destroyOnDeath: 1
+  destroyDelay: 0.2
 --- !u!1 &1621908667
 GameObject:
   m_ObjectHideFlags: 0
