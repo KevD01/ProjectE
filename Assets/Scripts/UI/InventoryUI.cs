@@ -9,12 +9,15 @@ public class InventoryUI : MonoBehaviour
     [Header("Referencias")]
     [SerializeField] private GameObject inventoryPanel;
     [SerializeField] private TMP_Text inventoryListText;
+    [SerializeField] private TMP_Text inventoryDescriptionText;
+    [SerializeField] private TMP_Text inventoryHelpText;
 
     [Header("Input")]
     [SerializeField] private KeyCode inventoryKey = KeyCode.I;
 
     private PlayerTankController playerMovement;
     private bool isOpen;
+    private int selectedIndex;
 
     public bool IsOpen => isOpen;
 
@@ -54,9 +57,23 @@ public class InventoryUI : MonoBehaviour
                 OpenInventory();
         }
 
-        if (isOpen && Input.GetKeyDown(KeyCode.Escape))
+        if (!isOpen)
+            return;
+
+        if (Input.GetKeyDown(KeyCode.Escape))
         {
             CloseInventory();
+            return;
+        }
+
+        if (Input.GetKeyDown(KeyCode.W) || Input.GetKeyDown(KeyCode.UpArrow))
+        {
+            MoveSelection(-1);
+        }
+
+        if (Input.GetKeyDown(KeyCode.S) || Input.GetKeyDown(KeyCode.DownArrow))
+        {
+            MoveSelection(1);
         }
     }
 
@@ -76,6 +93,8 @@ public class InventoryUI : MonoBehaviour
             inventoryPanel.SetActive(true);
         }
 
+        selectedIndex = Mathf.Clamp(selectedIndex, 0, GetLastValidIndex());
+
         RefreshInventory();
     }
 
@@ -94,37 +113,126 @@ public class InventoryUI : MonoBehaviour
         }
     }
 
+    private void MoveSelection(int direction)
+    {
+        if (PlayerInventory.Instance == null)
+            return;
+
+        int itemCount = PlayerInventory.Instance.Slots.Count;
+
+        if (itemCount <= 0)
+            return;
+
+        selectedIndex += direction;
+
+        if (selectedIndex < 0)
+        {
+            selectedIndex = itemCount - 1;
+        }
+
+        if (selectedIndex >= itemCount)
+        {
+            selectedIndex = 0;
+        }
+
+        RefreshInventory();
+    }
+
+    private int GetLastValidIndex()
+    {
+        if (PlayerInventory.Instance == null)
+            return 0;
+
+        int itemCount = PlayerInventory.Instance.Slots.Count;
+
+        if (itemCount <= 0)
+            return 0;
+
+        return itemCount - 1;
+    }
+
     private void RefreshInventory()
+    {
+        if (PlayerInventory.Instance == null || PlayerInventory.Instance.Slots.Count <= 0)
+        {
+            if (inventoryListText != null)
+            {
+                inventoryListText.text = "No tienes objetos.";
+            }
+
+            if (inventoryDescriptionText != null)
+            {
+                inventoryDescriptionText.text = "";
+            }
+
+            if (inventoryHelpText != null)
+            {
+                inventoryHelpText.text = "I o Escape para cerrar";
+            }
+
+            return;
+        }
+
+        RefreshItemList();
+        RefreshItemDescription();
+        RefreshHelpText();
+    }
+
+    private void RefreshItemList()
     {
         if (inventoryListText == null)
             return;
 
-        if (PlayerInventory.Instance == null || PlayerInventory.Instance.Slots.Count <= 0)
-        {
-            inventoryListText.text = "No tienes objetos.";
-            return;
-        }
-
         StringBuilder builder = new StringBuilder();
 
-        builder.AppendLine("Objetos:");
-        builder.AppendLine();
-
-        foreach (InventorySlot slot in PlayerInventory.Instance.Slots)
+        for (int i = 0; i < PlayerInventory.Instance.Slots.Count; i++)
         {
+            InventorySlot slot = PlayerInventory.Instance.Slots[i];
+
             if (slot.itemData == null)
                 continue;
 
+            string marker = i == selectedIndex ? "> " : "  ";
+
             if (slot.quantity > 1)
             {
-                builder.AppendLine("- " + slot.itemData.itemName + " x" + slot.quantity);
+                builder.AppendLine(marker + slot.itemData.itemName + " x" + slot.quantity);
             }
             else
             {
-                builder.AppendLine("- " + slot.itemData.itemName);
+                builder.AppendLine(marker + slot.itemData.itemName);
             }
         }
 
         inventoryListText.text = builder.ToString();
+    }
+
+    private void RefreshItemDescription()
+    {
+        if (inventoryDescriptionText == null)
+            return;
+
+        InventorySlot selectedSlot = PlayerInventory.Instance.Slots[selectedIndex];
+
+        if (selectedSlot == null || selectedSlot.itemData == null)
+        {
+            inventoryDescriptionText.text = "";
+            return;
+        }
+
+        ItemData item = selectedSlot.itemData;
+
+        inventoryDescriptionText.text =
+            item.itemName +
+            "\n\n" +
+            item.itemDescription;
+    }
+
+    private void RefreshHelpText()
+    {
+        if (inventoryHelpText == null)
+            return;
+
+        inventoryHelpText.text = "W / S para seleccionar     I o Escape para cerrar";
     }
 }
