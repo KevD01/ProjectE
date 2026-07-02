@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e6a4a3fba55540147b89791f77b47ecb, type: 3}
+  m_Name: ITEM_Ammo_Pistol
+  m_EditorClassIdentifier: Assembly-CSharp::ItemData
+  itemId: ammo_pistol
+  itemName: Balas de pistola
+  itemDescription: "Munici\xF3n est\xE1ndar calibre 9mm. No abundan, as\xED que conviene
+    usarlas solo cuando sea necesario."
+  itemType: 1
+  canStack: 1
+  maxStack: 99
