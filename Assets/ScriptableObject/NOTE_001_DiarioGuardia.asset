@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4dc95cdf70acfbc48be25e1f566a1df2, type: 3}
+  m_Name: NOTE_001_DiarioGuardia
+  m_EditorClassIdentifier: Assembly-CSharp::NoteData
+  noteId: note_001_diario_guardia
+  noteTitle: Diario del guardia
+  noteBody: "No s\xE9 cu\xE1nto tiempo m\xE1s podremos mantener las puertas cerradas.\n\nAnoche
+    escuch\xE9 golpes desde el ala norte, pero cuando fui a revisar no hab\xEDa nadie.
+    Solo encontr\xE9 marcas en la pared... como si alguien hubiera intentado rascar
+    el concreto desde adentro.\n\nEl doctor Salvatierra dijo que era normal. Que
+    los pacientes estaban reaccionando al tratamiento.\n\nPero eso no era un paciente.\n\nEso
+    respiraba detr\xE1s de m\xED."
