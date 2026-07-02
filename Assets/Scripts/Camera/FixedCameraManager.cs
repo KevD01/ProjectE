@@ -89,6 +89,11 @@ public class FixedCameraManager : MonoBehaviour
         EvaluateBestCamera();
     }
 
+    public void ClearActiveZones()
+    {
+        activeZones.Clear();
+    }
+
     private void EvaluateBestCamera()
     {
         CameraZoneTrigger bestZone = null;

@@ -33,7 +33,7 @@ public class PlayerTankController : MonoBehaviour
 
         float currentSpeed = isRunning ? runSpeed : walkSpeed;
 
-        // Giro tipo tanque: A y D giran al personaje sobre su propio eje
+        // Giro tipo tanque
         transform.Rotate(Vector3.up * turnInput * rotationSpeed * Time.deltaTime);
 
         // Movimiento hacia donde mira el personaje
@@ -49,5 +49,40 @@ public class PlayerTankController : MonoBehaviour
         movement.y = verticalVelocity;
 
         characterController.Move(movement * Time.deltaTime);
+    }
+
+    public void ResetVerticalVelocity()
+    {
+        verticalVelocity = -2f;
+    }
+
+    public void TeleportTo(Transform destination)
+    {
+        if (destination == null)
+            return;
+
+        if (characterController == null)
+        {
+            characterController = GetComponent<CharacterController>();
+        }
+
+        bool controllerWasEnabled = characterController.enabled;
+
+        if (controllerWasEnabled)
+        {
+            characterController.enabled = false;
+        }
+
+        transform.SetPositionAndRotation(destination.position, destination.rotation);
+
+        ResetVerticalVelocity();
+
+        if (controllerWasEnabled)
+        {
+            characterController.enabled = true;
+        }
+
+        Physics.SyncTransforms();
+        characterController.Move(Vector3.zero);
     }
 }
