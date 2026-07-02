@@ -2757,6 +2757,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DoorTransition
   destinationSpawnPoint: {fileID: 1021483312}
   destinationCameraPoint: {fileID: 1705173852}
+  requiresKey: 1
+  requiredKey: {fileID: 11400000, guid: 1e858f08d3569e244bf4206ae442c6b4, type: 2}
+  lockedMessage: "Est\xE1 cerrada. Necesitas una llave."
   fadeOutTime: 0.4
   fadeInTime: 0.4
   waitInBlackTime: 0.2
@@ -3186,6 +3189,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DoorTransition
   destinationSpawnPoint: {fileID: 1308732670}
   destinationCameraPoint: {fileID: 1715717180}
+  requiresKey: 0
+  requiredKey: {fileID: 0}
+  lockedMessage: "Est\xE1 cerrada. Necesitas una llave."
   fadeOutTime: 0.4
   fadeInTime: 0.4
   waitInBlackTime: 0.2

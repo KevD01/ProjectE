@@ -7,6 +7,11 @@ public class DoorTransition : MonoBehaviour
     [SerializeField] private Transform destinationSpawnPoint;
     [SerializeField] private Transform destinationCameraPoint;
 
+    [Header("Llave requerida")]
+    [SerializeField] private bool requiresKey = false;
+    [SerializeField] private ItemData requiredKey;
+    [SerializeField] private string lockedMessage = "Está cerrada. Necesitas una llave.";
+
     [Header("Transición")]
     [SerializeField] private float fadeOutTime = 0.4f;
     [SerializeField] private float fadeInTime = 0.4f;
@@ -15,18 +20,30 @@ public class DoorTransition : MonoBehaviour
     [Header("Interacción")]
     [SerializeField] private KeyCode interactKey = KeyCode.E;
     [SerializeField] private float interactionDistance = 1.8f;
-    [SerializeField] private string interactionMessage = "Presiona E para usar la puerta";
+    [SerializeField] private string interactionMessage = "Presiona E para abrir la puerta";
 
     private GameObject playerObject;
     private bool playerInside;
     private bool isTransitioning;
     private bool promptIsVisible;
+    private bool showingTemporaryMessage;
+
+    private Coroutine temporaryMessageRoutine;
 
     private void Update()
     {
         UpdatePrompt();
 
         if (isTransitioning)
+            return;
+
+        if (NoteUI.Instance != null && NoteUI.Instance.IsOpen)
+            return;
+
+        if (NoteArchiveUI.Instance != null && NoteArchiveUI.Instance.IsOpen)
+            return;
+
+        if (InventoryUI.Instance != null && InventoryUI.Instance.IsOpen)
             return;
 
         if (playerObject == null)
@@ -40,17 +57,44 @@ public class DoorTransition : MonoBehaviour
 
         if (Input.GetKeyDown(interactKey))
         {
-            StartCoroutine(UseDoor());
+            TryUseDoor();
         }
+    }
+
+    private void TryUseDoor()
+    {
+        if (requiresKey)
+        {
+            if (requiredKey == null)
+            {
+                ShowTemporaryMessage("Esta puerta necesita llave, pero no tiene una asignada.");
+                Debug.LogWarning(gameObject.name + " requiere llave, pero Required Key está vacío.");
+                return;
+            }
+
+            if (PlayerInventory.Instance == null || !PlayerInventory.Instance.HasItem(requiredKey))
+            {
+                ShowTemporaryMessage(lockedMessage);
+                return;
+            }
+        }
+
+        StartCoroutine(UseDoor());
     }
 
     private void UpdatePrompt()
     {
+        if (showingTemporaryMessage)
+            return;
+
         bool shouldShowPrompt =
             !isTransitioning &&
             playerObject != null &&
             playerInside &&
-            IsPlayerCloseEnough();
+            IsPlayerCloseEnough() &&
+            (NoteUI.Instance == null || !NoteUI.Instance.IsOpen) &&
+            (NoteArchiveUI.Instance == null || !NoteArchiveUI.Instance.IsOpen) &&
+            (InventoryUI.Instance == null || !InventoryUI.Instance.IsOpen);
 
         if (shouldShowPrompt)
         {
@@ -79,6 +123,30 @@ public class DoorTransition : MonoBehaviour
         return distance <= interactionDistance;
     }
 
+    private void ShowTemporaryMessage(string message)
+    {
+        if (temporaryMessageRoutine != null)
+        {
+            StopCoroutine(temporaryMessageRoutine);
+        }
+
+        temporaryMessageRoutine = StartCoroutine(TemporaryMessageRoutine(message));
+    }
+
+    private IEnumerator TemporaryMessageRoutine(string message)
+    {
+        showingTemporaryMessage = true;
+        promptIsVisible = false;
+
+        InteractionPromptUI.Instance?.Show(message);
+
+        yield return new WaitForSeconds(1.5f);
+
+        InteractionPromptUI.Instance?.Hide();
+
+        showingTemporaryMessage = false;
+    }
+
     private IEnumerator UseDoor()
     {
         if (playerObject == null || destinationSpawnPoint == null)
@@ -88,6 +156,7 @@ public class DoorTransition : MonoBehaviour
 
         InteractionPromptUI.Instance?.Hide();
         promptIsVisible = false;
+        showingTemporaryMessage = false;
 
         GameObject currentPlayer = playerObject;
 
@@ -180,5 +249,6 @@ public class DoorTransition : MonoBehaviour
 
         InteractionPromptUI.Instance?.Hide();
         promptIsVisible = false;
+        showingTemporaryMessage = false;
     }
 }
