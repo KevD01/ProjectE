@@ -1190,6 +1190,37 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 559783532}
   m_CullTransparentMesh: 1
+--- !u!1 &574860367
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 574860368}
+  m_Layer: 0
+  m_Name: FirePoint
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &574860368
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 574860367}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 1.2, z: 0.75}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1096168312}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &594014381
 GameObject:
   m_ObjectHideFlags: 0
@@ -3003,6 +3034,7 @@ GameObject:
   - component: {fileID: 1096168307}
   - component: {fileID: 1096168313}
   - component: {fileID: 1096168314}
+  - component: {fileID: 1096168315}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -3146,6 +3178,7 @@ Transform:
   m_Children:
   - {fileID: 734087160}
   - {fileID: 1985478323}
+  - {fileID: 574860368}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1096168313
@@ -3171,7 +3204,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1096168306}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f4e2190e005fe4c4e82e1cb69af20ad7, type: 3}
   m_Name: 
@@ -3181,6 +3214,26 @@ MonoBehaviour:
   attackRange: 2
   attackAngle: 70
   showGizmos: 1
+--- !u!114 &1096168315
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1096168306}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d48cec6bff56c574b8b0fd77c597ac95, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerWeaponController
+  firePoint: {fileID: 574860368}
+  ammoItem: {fileID: 11400000, guid: f8310ca3100d73b459d7acee12affc3c, type: 2}
+  aimMouseButton: 1
+  fireMouseButton: 0
+  damage: 25
+  fireRange: 12
+  fireCooldown: 0.45
+  showDebugRay: 1
 --- !u!1 &1143833225
 GameObject:
   m_ObjectHideFlags: 0

@@ -90,6 +90,58 @@ public class PlayerInventory : MonoBehaviour
         return false;
     }
 
+    public int GetTotalQuantity(ItemData itemData)
+    {
+        if (itemData == null)
+            return 0;
+
+        int total = 0;
+
+        foreach (InventorySlot slot in slots)
+        {
+            if (slot.itemData == itemData)
+            {
+                total += slot.quantity;
+            }
+        }
+
+        return total;
+    }
+
+    public bool RemoveItem(ItemData itemData, int amount)
+    {
+        if (itemData == null)
+            return false;
+
+        if (amount <= 0)
+            return false;
+
+        if (GetTotalQuantity(itemData) < amount)
+            return false;
+
+        for (int i = slots.Count - 1; i >= 0; i--)
+        {
+            InventorySlot slot = slots[i];
+
+            if (slot.itemData != itemData)
+                continue;
+
+            int amountToRemove = Mathf.Min(slot.quantity, amount);
+            slot.quantity -= amountToRemove;
+            amount -= amountToRemove;
+
+            if (slot.quantity <= 0)
+            {
+                slots.RemoveAt(i);
+            }
+
+            if (amount <= 0)
+                return true;
+        }
+
+        return true;
+    }
+
     public bool RemoveAt(int index, int amount)
     {
         if (index < 0 || index >= slots.Count)

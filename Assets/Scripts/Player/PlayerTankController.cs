@@ -13,6 +13,7 @@ public class PlayerTankController : MonoBehaviour
 
     private CharacterController characterController;
     private float verticalVelocity;
+    private bool movementLocked;
 
     private void Awake()
     {
@@ -29,17 +30,19 @@ public class PlayerTankController : MonoBehaviour
         float moveInput = Input.GetAxisRaw("Vertical");
         float turnInput = Input.GetAxisRaw("Horizontal");
 
+        if (movementLocked)
+        {
+            moveInput = 0f;
+        }
+
         bool isRunning = Input.GetKey(KeyCode.LeftShift);
 
         float currentSpeed = isRunning ? runSpeed : walkSpeed;
 
-        // Giro tipo tanque
         transform.Rotate(Vector3.up * turnInput * rotationSpeed * Time.deltaTime);
 
-        // Movimiento hacia donde mira el personaje
         Vector3 movement = transform.forward * moveInput * currentSpeed;
 
-        // Gravedad
         if (characterController.isGrounded && verticalVelocity < 0)
         {
             verticalVelocity = -2f;
@@ -49,6 +52,11 @@ public class PlayerTankController : MonoBehaviour
         movement.y = verticalVelocity;
 
         characterController.Move(movement * Time.deltaTime);
+    }
+
+    public void SetMovementLocked(bool locked)
+    {
+        movementLocked = locked;
     }
 
     public void ResetVerticalVelocity()
@@ -84,5 +92,10 @@ public class PlayerTankController : MonoBehaviour
 
         Physics.SyncTransforms();
         characterController.Move(Vector3.zero);
+    }
+
+    private void OnDisable()
+    {
+        movementLocked = false;
     }
 }
