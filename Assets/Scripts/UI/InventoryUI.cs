@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Text;
 using TMPro;
 using UnityEngine;
@@ -14,10 +15,13 @@ public class InventoryUI : MonoBehaviour
 
     [Header("Input")]
     [SerializeField] private KeyCode inventoryKey = KeyCode.I;
+    [SerializeField] private KeyCode useItemKey = KeyCode.E;
 
     private PlayerTankController playerMovement;
+    private PlayerHealth playerHealth;
     private bool isOpen;
     private int selectedIndex;
+    private bool showingTemporaryMessage;
 
     public bool IsOpen => isOpen;
 
@@ -38,6 +42,7 @@ public class InventoryUI : MonoBehaviour
         if (player != null)
         {
             playerMovement = player.GetComponent<PlayerTankController>();
+            playerHealth = player.GetComponent<PlayerHealth>();
         }
     }
 
@@ -74,6 +79,11 @@ public class InventoryUI : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.S) || Input.GetKeyDown(KeyCode.DownArrow))
         {
             MoveSelection(1);
+        }
+
+        if (Input.GetKeyDown(useItemKey) || Input.GetKeyDown(KeyCode.Return))
+        {
+            UseSelectedItem();
         }
     }
 
@@ -115,6 +125,9 @@ public class InventoryUI : MonoBehaviour
 
     private void MoveSelection(int direction)
     {
+        if (showingTemporaryMessage)
+            return;
+
         if (PlayerInventory.Instance == null)
             return;
 
@@ -149,6 +162,75 @@ public class InventoryUI : MonoBehaviour
             return 0;
 
         return itemCount - 1;
+    }
+
+    private void UseSelectedItem()
+    {
+        if (showingTemporaryMessage)
+            return;
+
+        if (PlayerInventory.Instance == null)
+            return;
+
+        if (PlayerInventory.Instance.Slots.Count <= 0)
+            return;
+
+        if (selectedIndex < 0 || selectedIndex >= PlayerInventory.Instance.Slots.Count)
+            return;
+
+        InventorySlot selectedSlot = PlayerInventory.Instance.Slots[selectedIndex];
+
+        if (selectedSlot == null || selectedSlot.itemData == null)
+            return;
+
+        ItemData item = selectedSlot.itemData;
+
+        if (item.itemType == ItemType.Healing)
+        {
+            UseHealingItem(item);
+            return;
+        }
+
+        StartCoroutine(ShowInventoryMessage("No puedes usar eso ahora."));
+    }
+
+    private void UseHealingItem(ItemData item)
+    {
+        if (playerHealth == null)
+        {
+            StartCoroutine(ShowInventoryMessage("No se encontró la vida del jugador."));
+            return;
+        }
+
+        if (playerHealth.IsFullHealth())
+        {
+            StartCoroutine(ShowInventoryMessage("Tu vida ya está al máximo."));
+            return;
+        }
+
+        playerHealth.Heal(item.healingAmount);
+
+        PlayerInventory.Instance.RemoveAt(selectedIndex, 1);
+
+        selectedIndex = Mathf.Clamp(selectedIndex, 0, GetLastValidIndex());
+
+        RefreshInventory();
+    }
+
+    private IEnumerator ShowInventoryMessage(string message)
+    {
+        showingTemporaryMessage = true;
+
+        if (inventoryDescriptionText != null)
+        {
+            inventoryDescriptionText.text = message;
+        }
+
+        yield return new WaitForSeconds(1.2f);
+
+        showingTemporaryMessage = false;
+
+        RefreshInventory();
     }
 
     private void RefreshInventory()
@@ -233,6 +315,6 @@ public class InventoryUI : MonoBehaviour
         if (inventoryHelpText == null)
             return;
 
-        inventoryHelpText.text = "W / S para seleccionar     I o Escape para cerrar";
+        inventoryHelpText.text = "W / S seleccionar     E usar     I o Escape cerrar";
     }
 }

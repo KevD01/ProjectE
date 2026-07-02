@@ -17,7 +17,7 @@ public class ItemData : ScriptableObject
 
     [Header("Información")]
     public string itemName = "Objeto";
-    
+
     [TextArea(2, 6)]
     public string itemDescription = "Descripción del objeto.";
 
@@ -27,4 +27,7 @@ public class ItemData : ScriptableObject
     [Header("Inventario")]
     public bool canStack = false;
     public int maxStack = 1;
+
+    [Header("Curación")]
+    public int healingAmount = 0;
 }

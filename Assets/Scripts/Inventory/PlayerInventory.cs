@@ -32,7 +32,6 @@ public class PlayerInventory : MonoBehaviour
         if (amount <= 0)
             return false;
 
-        // Si el objeto se puede acumular, intentamos sumarlo a uno existente
         if (itemData.canStack)
         {
             foreach (InventorySlot slot in slots)
@@ -54,7 +53,6 @@ public class PlayerInventory : MonoBehaviour
             }
         }
 
-        // Si todavía queda cantidad por agregar, creamos nuevos espacios
         while (amount > 0)
         {
             if (slots.Count >= maxSlots)
@@ -90,5 +88,25 @@ public class PlayerInventory : MonoBehaviour
         }
 
         return false;
+    }
+
+    public bool RemoveAt(int index, int amount)
+    {
+        if (index < 0 || index >= slots.Count)
+            return false;
+
+        if (amount <= 0)
+            return false;
+
+        InventorySlot slot = slots[index];
+
+        slot.quantity -= amount;
+
+        if (slot.quantity <= 0)
+        {
+            slots.RemoveAt(index);
+        }
+
+        return true;
     }
 }

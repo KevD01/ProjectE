@@ -18,3 +18,4 @@ MonoBehaviour:
   itemType: 2
   canStack: 0
   maxStack: 1
+  healingAmount: 30
