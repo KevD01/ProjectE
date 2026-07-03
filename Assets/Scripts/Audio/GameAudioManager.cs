@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 public class GameAudioManager : MonoBehaviour
@@ -8,13 +9,19 @@ public class GameAudioManager : MonoBehaviour
     [SerializeField] private AudioSource sfxSource;
     [SerializeField] private AudioSource ambienceSource;
 
-    [Header("Ambiente")]
+    [Header("Ambiente inicial")]
     [SerializeField] private AudioClip startingAmbienceClip;
     [SerializeField] private float ambienceVolume = 0.35f;
 
-    [Header("Pitch aleatorio")]
+    [Header("Fade de ambiente")]
+    [SerializeField] private float defaultFadeTime = 1.5f;
+
+    [Header("Pitch aleatorio SFX")]
     [SerializeField] private float minPitch = 0.95f;
     [SerializeField] private float maxPitch = 1.05f;
+
+    private AudioClip currentAmbienceClip;
+    private Coroutine ambienceFadeRoutine;
 
     private void Awake()
     {
@@ -58,10 +65,71 @@ public class GameAudioManager : MonoBehaviour
         if (clip == null || ambienceSource == null)
             return;
 
+        currentAmbienceClip = clip;
+
         ambienceSource.clip = clip;
         ambienceSource.volume = volume;
         ambienceSource.loop = true;
         ambienceSource.Play();
+    }
+
+    public void ChangeAmbience(AudioClip newClip, float targetVolume)
+    {
+        ChangeAmbience(newClip, targetVolume, defaultFadeTime);
+    }
+
+    public void ChangeAmbience(AudioClip newClip, float targetVolume, float fadeTime)
+    {
+        if (newClip == null || ambienceSource == null)
+            return;
+
+        if (currentAmbienceClip == newClip && ambienceSource.isPlaying)
+            return;
+
+        if (ambienceFadeRoutine != null)
+        {
+            StopCoroutine(ambienceFadeRoutine);
+        }
+
+        ambienceFadeRoutine = StartCoroutine(ChangeAmbienceRoutine(newClip, targetVolume, fadeTime));
+    }
+
+    private IEnumerator ChangeAmbienceRoutine(AudioClip newClip, float targetVolume, float fadeTime)
+    {
+        float startVolume = ambienceSource.volume;
+        float timer = 0f;
+
+        while (timer < fadeTime)
+        {
+            timer += Time.deltaTime;
+            float t = timer / fadeTime;
+
+            ambienceSource.volume = Mathf.Lerp(startVolume, 0f, t);
+
+            yield return null;
+        }
+
+        ambienceSource.Stop();
+
+        currentAmbienceClip = newClip;
+        ambienceSource.clip = newClip;
+        ambienceSource.loop = true;
+        ambienceSource.Play();
+
+        timer = 0f;
+
+        while (timer < fadeTime)
+        {
+            timer += Time.deltaTime;
+            float t = timer / fadeTime;
+
+            ambienceSource.volume = Mathf.Lerp(0f, targetVolume, t);
+
+            yield return null;
+        }
+
+        ambienceSource.volume = targetVolume;
+        ambienceFadeRoutine = null;
     }
 
     public void StopAmbience()
@@ -70,5 +138,6 @@ public class GameAudioManager : MonoBehaviour
             return;
 
         ambienceSource.Stop();
+        currentAmbienceClip = null;
     }
 }

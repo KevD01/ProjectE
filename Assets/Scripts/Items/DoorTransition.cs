@@ -12,6 +12,12 @@ public class DoorTransition : MonoBehaviour
     [SerializeField] private ItemData requiredKey;
     [SerializeField] private string lockedMessage = "Está cerrada. Necesitas una llave.";
 
+    [Header("Audio")]
+    [SerializeField] private AudioClip openDoorSound;
+    [SerializeField] private AudioClip lockedDoorSound;
+    [SerializeField] private float openDoorVolume = 0.8f;
+    [SerializeField] private float lockedDoorVolume = 0.7f;
+
     [Header("Transición")]
     [SerializeField] private float fadeOutTime = 0.4f;
     [SerializeField] private float fadeInTime = 0.4f;
@@ -67,6 +73,7 @@ public class DoorTransition : MonoBehaviour
         {
             if (requiredKey == null)
             {
+                PlayLockedDoorSound();
                 ShowTemporaryMessage("Esta puerta necesita llave, pero no tiene una asignada.");
                 Debug.LogWarning(gameObject.name + " requiere llave, pero Required Key está vacío.");
                 return;
@@ -74,10 +81,13 @@ public class DoorTransition : MonoBehaviour
 
             if (PlayerInventory.Instance == null || !PlayerInventory.Instance.HasItem(requiredKey))
             {
+                PlayLockedDoorSound();
                 ShowTemporaryMessage(lockedMessage);
                 return;
             }
         }
+
+        PlayOpenDoorSound();
 
         StartCoroutine(UseDoor());
     }
@@ -121,6 +131,22 @@ public class DoorTransition : MonoBehaviour
 
         float distance = Vector3.Distance(transform.position, playerObject.transform.position);
         return distance <= interactionDistance;
+    }
+
+    private void PlayOpenDoorSound()
+    {
+        if (GameAudioManager.Instance != null)
+        {
+            GameAudioManager.Instance.PlaySFXNoPitch(openDoorSound, openDoorVolume);
+        }
+    }
+
+    private void PlayLockedDoorSound()
+    {
+        if (GameAudioManager.Instance != null)
+        {
+            GameAudioManager.Instance.PlaySFXNoPitch(lockedDoorSound, lockedDoorVolume);
+        }
     }
 
     private void ShowTemporaryMessage(string message)
