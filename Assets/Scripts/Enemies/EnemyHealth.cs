@@ -6,6 +6,12 @@ public class EnemyHealth : MonoBehaviour
     [SerializeField] private int maxHealth = 60;
     [SerializeField] private int currentHealth = 60;
 
+    [Header("Audio")]
+    [SerializeField] private AudioClip hitSound;
+    [SerializeField] private AudioClip deathSound;
+    [SerializeField] private float hitVolume = 0.8f;
+    [SerializeField] private float deathVolume = 1f;
+
     [Header("Muerte")]
     [SerializeField] private bool destroyOnDeath = true;
     [SerializeField] private float destroyDelay = 0.6f;
@@ -51,6 +57,8 @@ public class EnemyHealth : MonoBehaviour
             return;
         }
 
+        GameAudioManager.Instance?.PlaySFX(hitSound, hitVolume);
+
         if (hitReaction != null)
         {
             hitReaction.PlayHitReaction(damageSourcePosition);
@@ -63,6 +71,8 @@ public class EnemyHealth : MonoBehaviour
             return;
 
         isDead = true;
+
+        GameAudioManager.Instance?.PlaySFX(deathSound, deathVolume);
 
         Debug.Log(gameObject.name + " murió.");
 

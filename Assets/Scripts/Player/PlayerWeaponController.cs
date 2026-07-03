@@ -25,10 +25,19 @@ public class PlayerWeaponController : MonoBehaviour
     [SerializeField] private int currentAmmoInClip = 0;
     [SerializeField] private float reloadTime = 1.2f;
 
-    [Header("Feedback")]
+    [Header("Feedback visual")]
     [SerializeField] private float muzzleFlashTime = 0.05f;
     [SerializeField] private float cameraShakeDuration = 0.08f;
     [SerializeField] private float cameraShakeStrength = 0.06f;
+
+    [Header("Audio")]
+    [SerializeField] private AudioClip shootSound;
+    [SerializeField] private AudioClip reloadSound;
+    [SerializeField] private AudioClip emptyGunSound;
+    [SerializeField] private AudioClip noWeaponSound;
+    [SerializeField] private float shootVolume = 1f;
+    [SerializeField] private float reloadVolume = 0.8f;
+    [SerializeField] private float emptyGunVolume = 0.7f;
 
     [Header("Mensajes")]
     [SerializeField] private float noWeaponMessageCooldown = 1.2f;
@@ -140,6 +149,8 @@ public class PlayerWeaponController : MonoBehaviour
 
         if (currentAmmoInClip <= 0)
         {
+            GameAudioManager.Instance?.PlaySFX(emptyGunSound, emptyGunVolume);
+
             InteractionPromptUI.Instance?.Show("No hay balas cargadas. Presiona R para recargar.");
             Invoke(nameof(HidePrompt), 1.4f);
             return;
@@ -199,6 +210,8 @@ public class PlayerWeaponController : MonoBehaviour
 
         if (reserveAmmo <= 0)
         {
+            GameAudioManager.Instance?.PlaySFX(emptyGunSound, emptyGunVolume);
+
             InteractionPromptUI.Instance?.Show("No tienes munición para recargar.");
             Invoke(nameof(HidePrompt), 1.2f);
             return;
@@ -210,6 +223,8 @@ public class PlayerWeaponController : MonoBehaviour
     private IEnumerator ReloadRoutine()
     {
         isReloading = true;
+
+        GameAudioManager.Instance?.PlaySFXNoPitch(reloadSound, reloadVolume);
 
         InteractionPromptUI.Instance?.Show("Recargando...");
 
@@ -260,12 +275,16 @@ public class PlayerWeaponController : MonoBehaviour
 
         lastNoWeaponMessageTime = Time.time;
 
+        GameAudioManager.Instance?.PlaySFX(noWeaponSound, emptyGunVolume);
+
         InteractionPromptUI.Instance?.Show("No tienes una pistola equipada.");
         Invoke(nameof(HidePrompt), 1.2f);
     }
 
     private void PlayShootFeedback()
     {
+        GameAudioManager.Instance?.PlaySFX(shootSound, shootVolume);
+
         if (muzzleFlashObject != null)
         {
             if (muzzleFlashRoutine != null)
