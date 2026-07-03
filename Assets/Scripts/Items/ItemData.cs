@@ -5,6 +5,7 @@ public enum ItemType
     Key,
     Ammo,
     Healing,
+    Weapon,
     Puzzle,
     Misc
 }

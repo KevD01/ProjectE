@@ -19,6 +19,7 @@ public class InventoryUI : MonoBehaviour
 
     private PlayerTankController playerMovement;
     private PlayerHealth playerHealth;
+    private PlayerEquipment playerEquipment;
     private bool isOpen;
     private int selectedIndex;
     private bool showingTemporaryMessage;
@@ -43,6 +44,7 @@ public class InventoryUI : MonoBehaviour
         {
             playerMovement = player.GetComponent<PlayerTankController>();
             playerHealth = player.GetComponent<PlayerHealth>();
+            playerEquipment = player.GetComponent<PlayerEquipment>();
         }
     }
 
@@ -191,6 +193,12 @@ public class InventoryUI : MonoBehaviour
             return;
         }
 
+        if (item.itemType == ItemType.Weapon)
+        {
+            EquipWeapon(item);
+            return;
+        }
+
         StartCoroutine(ShowInventoryMessage("No puedes usar eso ahora."));
     }
 
@@ -215,6 +223,19 @@ public class InventoryUI : MonoBehaviour
         selectedIndex = Mathf.Clamp(selectedIndex, 0, GetLastValidIndex());
 
         RefreshInventory();
+    }
+
+    private void EquipWeapon(ItemData item)
+    {
+        if (playerEquipment == null)
+        {
+            StartCoroutine(ShowInventoryMessage("No se encontró el equipo del jugador."));
+            return;
+        }
+
+        playerEquipment.EquipWeapon(item);
+
+        StartCoroutine(ShowInventoryMessage("Equipaste: " + item.itemName));
     }
 
     private IEnumerator ShowInventoryMessage(string message)
@@ -275,14 +296,22 @@ public class InventoryUI : MonoBehaviour
                 continue;
 
             string marker = i == selectedIndex ? "> " : "  ";
+            string equippedMarker = "";
+
+            if (slot.itemData.itemType == ItemType.Weapon &&
+                playerEquipment != null &&
+                playerEquipment.HasEquippedWeapon(slot.itemData))
+            {
+                equippedMarker = " [Equipada]";
+            }
 
             if (slot.quantity > 1)
             {
-                builder.AppendLine(marker + slot.itemData.itemName + " x" + slot.quantity);
+                builder.AppendLine(marker + slot.itemData.itemName + " x" + slot.quantity + equippedMarker);
             }
             else
             {
-                builder.AppendLine(marker + slot.itemData.itemName);
+                builder.AppendLine(marker + slot.itemData.itemName + equippedMarker);
             }
         }
 
@@ -304,10 +333,20 @@ public class InventoryUI : MonoBehaviour
 
         ItemData item = selectedSlot.itemData;
 
+        string extraInfo = "";
+
+        if (item.itemType == ItemType.Weapon &&
+            playerEquipment != null &&
+            playerEquipment.HasEquippedWeapon(item))
+        {
+            extraInfo = "\n\nEstado: Equipada";
+        }
+
         inventoryDescriptionText.text =
             item.itemName +
             "\n\n" +
-            item.itemDescription;
+            item.itemDescription +
+            extraInfo;
     }
 
     private void RefreshHelpText()
@@ -315,6 +354,6 @@ public class InventoryUI : MonoBehaviour
         if (inventoryHelpText == null)
             return;
 
-        inventoryHelpText.text = "W / S seleccionar     E usar     I o Escape cerrar";
+        inventoryHelpText.text = "W / S seleccionar     E usar/equipar     I o Escape cerrar";
     }
 }

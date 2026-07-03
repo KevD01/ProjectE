@@ -5,6 +5,7 @@ public class PlayerWeaponController : MonoBehaviour
 {
     [Header("Referencias")]
     [SerializeField] private Transform firePoint;
+    [SerializeField] private ItemData requiredWeaponItem;
     [SerializeField] private ItemData ammoItem;
     [SerializeField] private GameObject muzzleFlashObject;
 
@@ -23,11 +24,15 @@ public class PlayerWeaponController : MonoBehaviour
     [SerializeField] private float cameraShakeDuration = 0.08f;
     [SerializeField] private float cameraShakeStrength = 0.06f;
 
+    [Header("Mensajes")]
+    [SerializeField] private float noWeaponMessageCooldown = 1.2f;
+
     [Header("Debug")]
     [SerializeField] private bool showDebug = true;
 
     private PlayerTankController playerMovement;
     private float lastFireTime;
+    private float lastNoWeaponMessageTime;
     private bool isAiming;
     private Coroutine muzzleFlashRoutine;
 
@@ -56,7 +61,26 @@ public class PlayerWeaponController : MonoBehaviour
     private void HandleAiming()
     {
         bool wantsToAim = Input.GetMouseButton(aimMouseButton);
-        SetAiming(wantsToAim);
+
+        if (!wantsToAim)
+        {
+            SetAiming(false);
+            return;
+        }
+
+        if (!HasRequiredWeaponEquipped())
+        {
+            SetAiming(false);
+
+            if (Input.GetMouseButtonDown(aimMouseButton))
+            {
+                ShowNoWeaponMessage();
+            }
+
+            return;
+        }
+
+        SetAiming(true);
     }
 
     private void HandleShooting()
@@ -75,6 +99,13 @@ public class PlayerWeaponController : MonoBehaviour
 
     private void TryShoot()
     {
+        if (!HasRequiredWeaponEquipped())
+        {
+            ShowNoWeaponMessage();
+            SetAiming(false);
+            return;
+        }
+
         if (ammoItem == null)
         {
             Debug.LogWarning("No hay Ammo Item asignado en PlayerWeaponController.");
@@ -127,6 +158,28 @@ public class PlayerWeaponController : MonoBehaviour
         }
 
         Debug.Log("Disparo. Munición restante: " + PlayerInventory.Instance.GetTotalQuantity(ammoItem));
+    }
+
+    private bool HasRequiredWeaponEquipped()
+    {
+        if (requiredWeaponItem == null)
+            return true;
+
+        if (PlayerEquipment.Instance == null)
+            return false;
+
+        return PlayerEquipment.Instance.HasEquippedWeapon(requiredWeaponItem);
+    }
+
+    private void ShowNoWeaponMessage()
+    {
+        if (Time.time < lastNoWeaponMessageTime + noWeaponMessageCooldown)
+            return;
+
+        lastNoWeaponMessageTime = Time.time;
+
+        InteractionPromptUI.Instance?.Show("No tienes una pistola equipada.");
+        Invoke(nameof(HidePrompt), 1.2f);
     }
 
     private void PlayShootFeedback()
