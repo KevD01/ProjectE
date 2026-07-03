@@ -12,12 +12,18 @@ public class PlayerWeaponController : MonoBehaviour
     [Header("Input")]
     [SerializeField] private int aimMouseButton = 1;
     [SerializeField] private int fireMouseButton = 0;
+    [SerializeField] private KeyCode reloadKey = KeyCode.R;
 
     [Header("Pistola")]
     [SerializeField] private int damage = 25;
     [SerializeField] private float fireRange = 12f;
     [SerializeField] private float fireCooldown = 0.45f;
     [SerializeField] private float shotAngle = 100f;
+
+    [Header("Cargador")]
+    [SerializeField] private int maxAmmoInClip = 7;
+    [SerializeField] private int currentAmmoInClip = 0;
+    [SerializeField] private float reloadTime = 1.2f;
 
     [Header("Feedback")]
     [SerializeField] private float muzzleFlashTime = 0.05f;
@@ -34,11 +40,19 @@ public class PlayerWeaponController : MonoBehaviour
     private float lastFireTime;
     private float lastNoWeaponMessageTime;
     private bool isAiming;
+    private bool isReloading;
     private Coroutine muzzleFlashRoutine;
+
+    public int CurrentAmmoInClip => currentAmmoInClip;
+    public int MaxAmmoInClip => maxAmmoInClip;
+    public ItemData AmmoItem => ammoItem;
+    public bool IsReloading => isReloading;
 
     private void Awake()
     {
         playerMovement = GetComponent<PlayerTankController>();
+
+        currentAmmoInClip = Mathf.Clamp(currentAmmoInClip, 0, maxAmmoInClip);
 
         if (muzzleFlashObject != null)
         {
@@ -55,6 +69,7 @@ public class PlayerWeaponController : MonoBehaviour
         }
 
         HandleAiming();
+        HandleReload();
         HandleShooting();
     }
 
@@ -83,9 +98,26 @@ public class PlayerWeaponController : MonoBehaviour
         SetAiming(true);
     }
 
+    private void HandleReload()
+    {
+        if (!HasRequiredWeaponEquipped())
+            return;
+
+        if (isReloading)
+            return;
+
+        if (Input.GetKeyDown(reloadKey))
+        {
+            TryReload();
+        }
+    }
+
     private void HandleShooting()
     {
         if (!isAiming)
+            return;
+
+        if (isReloading)
             return;
 
         if (!Input.GetMouseButtonDown(fireMouseButton))
@@ -106,32 +138,14 @@ public class PlayerWeaponController : MonoBehaviour
             return;
         }
 
-        if (ammoItem == null)
+        if (currentAmmoInClip <= 0)
         {
-            Debug.LogWarning("No hay Ammo Item asignado en PlayerWeaponController.");
+            InteractionPromptUI.Instance?.Show("No hay balas cargadas. Presiona R para recargar.");
+            Invoke(nameof(HidePrompt), 1.4f);
             return;
         }
 
-        if (PlayerInventory.Instance == null)
-        {
-            Debug.LogWarning("No existe PlayerInventory en la escena.");
-            return;
-        }
-
-        int ammoCount = PlayerInventory.Instance.GetTotalQuantity(ammoItem);
-
-        if (ammoCount <= 0)
-        {
-            InteractionPromptUI.Instance?.Show("No tienes munición.");
-            Invoke(nameof(HidePrompt), 1.2f);
-            return;
-        }
-
-        bool removedAmmo = PlayerInventory.Instance.RemoveItem(ammoItem, 1);
-
-        if (!removedAmmo)
-            return;
-
+        currentAmmoInClip--;
         lastFireTime = Time.time;
 
         PlayShootFeedback();
@@ -140,7 +154,7 @@ public class PlayerWeaponController : MonoBehaviour
 
         if (enemy != null)
         {
-            enemy.TakeDamage(damage);
+            enemy.TakeDamage(damage, transform.position);
 
             if (showDebug)
             {
@@ -157,10 +171,78 @@ public class PlayerWeaponController : MonoBehaviour
             }
         }
 
-        Debug.Log("Disparo. Munición restante: " + PlayerInventory.Instance.GetTotalQuantity(ammoItem));
+        Debug.Log("Disparo. Cargador: " + currentAmmoInClip + "/" + maxAmmoInClip);
     }
 
-    private bool HasRequiredWeaponEquipped()
+    private void TryReload()
+    {
+        if (ammoItem == null)
+        {
+            Debug.LogWarning("No hay Ammo Item asignado.");
+            return;
+        }
+
+        if (PlayerInventory.Instance == null)
+        {
+            Debug.LogWarning("No existe PlayerInventory en la escena.");
+            return;
+        }
+
+        if (currentAmmoInClip >= maxAmmoInClip)
+        {
+            InteractionPromptUI.Instance?.Show("El cargador ya está lleno.");
+            Invoke(nameof(HidePrompt), 1.2f);
+            return;
+        }
+
+        int reserveAmmo = PlayerInventory.Instance.GetTotalQuantity(ammoItem);
+
+        if (reserveAmmo <= 0)
+        {
+            InteractionPromptUI.Instance?.Show("No tienes munición para recargar.");
+            Invoke(nameof(HidePrompt), 1.2f);
+            return;
+        }
+
+        StartCoroutine(ReloadRoutine());
+    }
+
+    private IEnumerator ReloadRoutine()
+    {
+        isReloading = true;
+
+        InteractionPromptUI.Instance?.Show("Recargando...");
+
+        yield return new WaitForSeconds(reloadTime);
+
+        int missingAmmo = maxAmmoInClip - currentAmmoInClip;
+        int reserveAmmo = PlayerInventory.Instance.GetTotalQuantity(ammoItem);
+        int ammoToLoad = Mathf.Min(missingAmmo, reserveAmmo);
+
+        bool removed = PlayerInventory.Instance.RemoveItem(ammoItem, ammoToLoad);
+
+        if (removed)
+        {
+            currentAmmoInClip += ammoToLoad;
+            currentAmmoInClip = Mathf.Clamp(currentAmmoInClip, 0, maxAmmoInClip);
+
+            Debug.Log("Recarga completa. Cargador: " + currentAmmoInClip + "/" + maxAmmoInClip);
+        }
+
+        InteractionPromptUI.Instance?.Hide();
+
+        isReloading = false;
+    }
+
+    public int GetReserveAmmo()
+    {
+        if (ammoItem == null || PlayerInventory.Instance == null)
+            return 0;
+
+        return PlayerInventory.Instance.GetTotalQuantity(ammoItem);
+    }
+
+    public bool HasRequiredWeaponEquipped()
     {
         if (requiredWeaponItem == null)
             return true;
@@ -282,7 +364,10 @@ public class PlayerWeaponController : MonoBehaviour
 
     private void HidePrompt()
     {
-        InteractionPromptUI.Instance?.Hide();
+        if (!isReloading)
+        {
+            InteractionPromptUI.Instance?.Hide();
+        }
     }
 
     private bool IsGameplayPaused()

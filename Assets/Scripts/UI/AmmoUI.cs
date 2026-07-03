@@ -5,20 +5,50 @@ public class AmmoUI : MonoBehaviour
 {
     [Header("Referencias")]
     [SerializeField] private TMP_Text ammoText;
-    [SerializeField] private ItemData ammoItem;
+    [SerializeField] private PlayerWeaponController weaponController;
+
+    private void Start()
+    {
+        if (weaponController == null)
+        {
+            GameObject player = GameObject.FindGameObjectWithTag("Player");
+
+            if (player != null)
+            {
+                weaponController = player.GetComponent<PlayerWeaponController>();
+            }
+        }
+    }
 
     private void Update()
     {
-        if (ammoText == null || ammoItem == null)
+        if (ammoText == null)
             return;
 
-        int ammoAmount = 0;
-
-        if (PlayerInventory.Instance != null)
+        if (weaponController == null)
         {
-            ammoAmount = PlayerInventory.Instance.GetTotalQuantity(ammoItem);
+            ammoText.text = "Munición: --";
+            return;
         }
 
-        ammoText.text = "Balas: " + ammoAmount;
+        int clip = weaponController.CurrentAmmoInClip;
+        int maxClip = weaponController.MaxAmmoInClip;
+        int reserve = weaponController.GetReserveAmmo();
+
+        if (!weaponController.HasRequiredWeaponEquipped())
+        {
+            ammoText.text = "Pistola: no equipada\nReserva: " + reserve;
+            return;
+        }
+
+        if (weaponController.IsReloading)
+        {
+            ammoText.text = "Recargando...\nReserva: " + reserve;
+            return;
+        }
+
+        ammoText.text =
+            "Pistola: " + clip + "/" + maxClip +
+            "\nReserva: " + reserve;
     }
 }

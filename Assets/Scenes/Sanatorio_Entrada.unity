@@ -2876,7 +2876,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: W / S para seleccionar     I o Escape para cerrar
+  m_text: W / S seleccionar     E usar/equipar     R recargar     I o Escape cerrar
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -3773,10 +3773,14 @@ MonoBehaviour:
   muzzleFlashObject: {fileID: 902703160}
   aimMouseButton: 1
   fireMouseButton: 0
+  reloadKey: 114
   damage: 25
   fireRange: 12
   fireCooldown: 0.45
   shotAngle: 100
+  maxAmmoInClip: 7
+  currentAmmoInClip: 0
+  reloadTime: 1.2
   muzzleFlashTime: 0.05
   cameraShakeDuration: 0.08
   cameraShakeStrength: 0.06
@@ -5165,6 +5169,7 @@ GameObject:
   - component: {fileID: 1579394194}
   - component: {fileID: 1579394193}
   - component: {fileID: 1579394198}
+  - component: {fileID: 1579394199}
   m_Layer: 0
   m_Name: Enemy_Patient_01
   m_TagString: Untagged
@@ -5327,7 +5332,25 @@ MonoBehaviour:
   maxHealth: 60
   currentHealth: 60
   destroyOnDeath: 1
-  destroyDelay: 0.2
+  destroyDelay: 0.6
+--- !u!114 &1579394199
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1579394191}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 86f11edca47bf7e4f9296f21eaefc7e8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyHitReaction
+  stunTime: 0.25
+  knockbackDistance: 0.35
+  knockbackTime: 0.12
+  enemyRenderer: {fileID: 1579394196}
+  hitColor: {r: 1, g: 0, b: 0, a: 1}
+  flashTime: 0.08
 --- !u!1 &1621908667
 GameObject:
   m_ObjectHideFlags: 0
@@ -7113,7 +7136,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AmmoUI
   ammoText: {fileID: 515536815}
-  ammoItem: {fileID: 11400000, guid: f8310ca3100d73b459d7acee12affc3c, type: 2}
+  weaponController: {fileID: 1096168315}
 --- !u!114 &1988820413
 MonoBehaviour:
   m_ObjectHideFlags: 0
