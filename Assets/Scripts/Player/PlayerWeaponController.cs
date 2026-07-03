@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 public class PlayerWeaponController : MonoBehaviour
@@ -5,6 +6,7 @@ public class PlayerWeaponController : MonoBehaviour
     [Header("Referencias")]
     [SerializeField] private Transform firePoint;
     [SerializeField] private ItemData ammoItem;
+    [SerializeField] private GameObject muzzleFlashObject;
 
     [Header("Input")]
     [SerializeField] private int aimMouseButton = 1;
@@ -16,16 +18,27 @@ public class PlayerWeaponController : MonoBehaviour
     [SerializeField] private float fireCooldown = 0.45f;
     [SerializeField] private float shotAngle = 100f;
 
+    [Header("Feedback")]
+    [SerializeField] private float muzzleFlashTime = 0.05f;
+    [SerializeField] private float cameraShakeDuration = 0.08f;
+    [SerializeField] private float cameraShakeStrength = 0.06f;
+
     [Header("Debug")]
     [SerializeField] private bool showDebug = true;
 
     private PlayerTankController playerMovement;
     private float lastFireTime;
     private bool isAiming;
+    private Coroutine muzzleFlashRoutine;
 
     private void Awake()
     {
         playerMovement = GetComponent<PlayerTankController>();
+
+        if (muzzleFlashObject != null)
+        {
+            muzzleFlashObject.SetActive(false);
+        }
     }
 
     private void Update()
@@ -90,6 +103,8 @@ public class PlayerWeaponController : MonoBehaviour
 
         lastFireTime = Time.time;
 
+        PlayShootFeedback();
+
         EnemyHealth enemy = FindEnemyInFront();
 
         if (enemy != null)
@@ -112,6 +127,34 @@ public class PlayerWeaponController : MonoBehaviour
         }
 
         Debug.Log("Disparo. Munición restante: " + PlayerInventory.Instance.GetTotalQuantity(ammoItem));
+    }
+
+    private void PlayShootFeedback()
+    {
+        if (muzzleFlashObject != null)
+        {
+            if (muzzleFlashRoutine != null)
+            {
+                StopCoroutine(muzzleFlashRoutine);
+            }
+
+            muzzleFlashRoutine = StartCoroutine(MuzzleFlashRoutine());
+        }
+
+        if (CameraShake.Instance != null)
+        {
+            CameraShake.Instance.Shake(cameraShakeDuration, cameraShakeStrength);
+        }
+    }
+
+    private IEnumerator MuzzleFlashRoutine()
+    {
+        muzzleFlashObject.SetActive(true);
+
+        yield return new WaitForSeconds(muzzleFlashTime);
+
+        muzzleFlashObject.SetActive(false);
+        muzzleFlashRoutine = null;
     }
 
     private EnemyHealth FindEnemyInFront()
@@ -206,5 +249,10 @@ public class PlayerWeaponController : MonoBehaviour
     private void OnDisable()
     {
         SetAiming(false);
+
+        if (muzzleFlashObject != null)
+        {
+            muzzleFlashObject.SetActive(false);
+        }
     }
 }
