@@ -12,12 +12,17 @@ public class DoorTransition : MonoBehaviour
     [SerializeField] private ItemData requiredKey;
     [SerializeField] private string lockedMessage = "Está cerrada. Necesitas una llave.";
 
-    [Header("Desbloqueo")]
+    [Header("Desbloqueo con llave")]
     [SerializeField] private bool startsUnlocked = false;
     [SerializeField] private bool unlockPermanently = true;
     [SerializeField] private bool consumeKeyOnUnlock = true;
     [SerializeField] private string unlockMessage = "Usaste la llave.";
     [SerializeField] private float unlockMessageTime = 0.8f;
+
+    [Header("Bloqueo por puzzle")]
+    [SerializeField] private bool requiresPuzzleUnlock = false;
+    [SerializeField] private bool startsPuzzleUnlocked = false;
+    [SerializeField] private string puzzleLockedMessage = "No hay energía. La puerta no responde.";
 
     [Header("Audio")]
     [SerializeField] private AudioClip openDoorSound;
@@ -41,12 +46,14 @@ public class DoorTransition : MonoBehaviour
     private bool promptIsVisible;
     private bool showingTemporaryMessage;
     private bool isUnlocked;
+    private bool isPuzzleUnlocked;
 
     private Coroutine temporaryMessageRoutine;
 
     private void Awake()
     {
         isUnlocked = startsUnlocked;
+        isPuzzleUnlocked = startsPuzzleUnlocked;
     }
 
     private void Update()
@@ -82,6 +89,13 @@ public class DoorTransition : MonoBehaviour
 
     private void TryUseDoor()
     {
+        if (requiresPuzzleUnlock && !isPuzzleUnlocked)
+        {
+            PlayLockedDoorSound();
+            ShowTemporaryMessage(puzzleLockedMessage);
+            return;
+        }
+
         if (requiresKey && !isUnlocked)
         {
             if (requiredKey == null)
@@ -99,7 +113,7 @@ public class DoorTransition : MonoBehaviour
                 return;
             }
 
-            UnlockDoor();
+            UnlockDoorWithKey();
 
             StartCoroutine(UseDoor(unlockMessage));
             return;
@@ -108,7 +122,7 @@ public class DoorTransition : MonoBehaviour
         StartCoroutine(UseDoor(""));
     }
 
-    private void UnlockDoor()
+    private void UnlockDoorWithKey()
     {
         if (unlockPermanently)
         {
@@ -120,7 +134,13 @@ public class DoorTransition : MonoBehaviour
             PlayerInventory.Instance.RemoveItem(requiredKey, 1);
         }
 
-        Debug.Log(gameObject.name + " fue desbloqueada.");
+        Debug.Log(gameObject.name + " fue desbloqueada con llave.");
+    }
+
+    public void UnlockFromPuzzle()
+    {
+        isPuzzleUnlocked = true;
+        Debug.Log(gameObject.name + " fue desbloqueada por puzzle.");
     }
 
     private void UpdatePrompt()
