@@ -12,6 +12,13 @@ public class DoorTransition : MonoBehaviour
     [SerializeField] private ItemData requiredKey;
     [SerializeField] private string lockedMessage = "Está cerrada. Necesitas una llave.";
 
+    [Header("Desbloqueo")]
+    [SerializeField] private bool startsUnlocked = false;
+    [SerializeField] private bool unlockPermanently = true;
+    [SerializeField] private bool consumeKeyOnUnlock = true;
+    [SerializeField] private string unlockMessage = "Usaste la llave.";
+    [SerializeField] private float unlockMessageTime = 0.8f;
+
     [Header("Audio")]
     [SerializeField] private AudioClip openDoorSound;
     [SerializeField] private AudioClip lockedDoorSound;
@@ -33,8 +40,14 @@ public class DoorTransition : MonoBehaviour
     private bool isTransitioning;
     private bool promptIsVisible;
     private bool showingTemporaryMessage;
+    private bool isUnlocked;
 
     private Coroutine temporaryMessageRoutine;
+
+    private void Awake()
+    {
+        isUnlocked = startsUnlocked;
+    }
 
     private void Update()
     {
@@ -69,7 +82,7 @@ public class DoorTransition : MonoBehaviour
 
     private void TryUseDoor()
     {
-        if (requiresKey)
+        if (requiresKey && !isUnlocked)
         {
             if (requiredKey == null)
             {
@@ -85,11 +98,29 @@ public class DoorTransition : MonoBehaviour
                 ShowTemporaryMessage(lockedMessage);
                 return;
             }
+
+            UnlockDoor();
+
+            StartCoroutine(UseDoor(unlockMessage));
+            return;
         }
 
-        PlayOpenDoorSound();
+        StartCoroutine(UseDoor(""));
+    }
 
-        StartCoroutine(UseDoor());
+    private void UnlockDoor()
+    {
+        if (unlockPermanently)
+        {
+            isUnlocked = true;
+        }
+
+        if (consumeKeyOnUnlock && PlayerInventory.Instance != null && requiredKey != null)
+        {
+            PlayerInventory.Instance.RemoveItem(requiredKey, 1);
+        }
+
+        Debug.Log(gameObject.name + " fue desbloqueada.");
     }
 
     private void UpdatePrompt()
@@ -135,18 +166,12 @@ public class DoorTransition : MonoBehaviour
 
     private void PlayOpenDoorSound()
     {
-        if (GameAudioManager.Instance != null)
-        {
-            GameAudioManager.Instance.PlaySFXNoPitch(openDoorSound, openDoorVolume);
-        }
+        GameAudioManager.Instance?.PlaySFXNoPitch(openDoorSound, openDoorVolume);
     }
 
     private void PlayLockedDoorSound()
     {
-        if (GameAudioManager.Instance != null)
-        {
-            GameAudioManager.Instance.PlaySFXNoPitch(lockedDoorSound, lockedDoorVolume);
-        }
+        GameAudioManager.Instance?.PlaySFXNoPitch(lockedDoorSound, lockedDoorVolume);
     }
 
     private void ShowTemporaryMessage(string message)
@@ -173,7 +198,7 @@ public class DoorTransition : MonoBehaviour
         showingTemporaryMessage = false;
     }
 
-    private IEnumerator UseDoor()
+    private IEnumerator UseDoor(string messageBeforeOpening)
     {
         if (playerObject == null || destinationSpawnPoint == null)
             yield break;
@@ -196,6 +221,17 @@ public class DoorTransition : MonoBehaviour
             playerMovement.enabled = false;
             playerMovement.ResetVerticalVelocity();
         }
+
+        if (!string.IsNullOrWhiteSpace(messageBeforeOpening))
+        {
+            InteractionPromptUI.Instance?.Show(messageBeforeOpening);
+
+            yield return new WaitForSeconds(unlockMessageTime);
+
+            InteractionPromptUI.Instance?.Hide();
+        }
+
+        PlayOpenDoorSound();
 
         if (ScreenFader.Instance != null)
         {
