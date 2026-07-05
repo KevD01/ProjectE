@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4dc95cdf70acfbc48be25e1f566a1df2, type: 3}
+  m_Name: NOTE_003_Calderas
+  m_EditorClassIdentifier: Assembly-CSharp::NoteData
+  noteId: note_003_calderas
+  noteTitle: 'Registro de calderas '
+  noteBody: "La presi\xF3n volvi\xF3 a subir durante la madrugada.\n\nAlguien cerr\xF3
+    la v\xE1lvula principal, pero el vapor segu\xEDa saliendo por las tuber\xEDas
+    del ala de mantenimiento.\n\nEl doctor dijo que no detuvi\xE9ramos el tratamiento.\n\nPero
+    los gritos ven\xEDan desde las paredes."
