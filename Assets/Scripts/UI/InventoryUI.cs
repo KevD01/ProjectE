@@ -50,6 +50,9 @@ public class InventoryUI : MonoBehaviour
 
     private void Update()
     {
+        if (GameOverUI.Instance != null && GameOverUI.Instance.IsGameOver)
+            return;
+
         if (NoteUI.Instance != null && NoteUI.Instance.IsOpen)
             return;
 
@@ -122,6 +125,17 @@ public class InventoryUI : MonoBehaviour
         if (playerMovement != null)
         {
             playerMovement.enabled = true;
+        }
+    }
+
+    public void ForceClose()
+    {
+        isOpen = false;
+        showingTemporaryMessage = false;
+
+        if (inventoryPanel != null)
+        {
+            inventoryPanel.SetActive(false);
         }
     }
 
@@ -207,6 +221,12 @@ public class InventoryUI : MonoBehaviour
         if (playerHealth == null)
         {
             StartCoroutine(ShowInventoryMessage("No se encontró la vida del jugador."));
+            return;
+        }
+
+        if (playerHealth.IsDead)
+        {
+            StartCoroutine(ShowInventoryMessage("No puedes usar eso ahora."));
             return;
         }
 
@@ -322,6 +342,14 @@ public class InventoryUI : MonoBehaviour
     {
         if (inventoryDescriptionText == null)
             return;
+
+        if (PlayerInventory.Instance == null || PlayerInventory.Instance.Slots.Count <= 0)
+        {
+            inventoryDescriptionText.text = "";
+            return;
+        }
+
+        selectedIndex = Mathf.Clamp(selectedIndex, 0, PlayerInventory.Instance.Slots.Count - 1);
 
         InventorySlot selectedSlot = PlayerInventory.Instance.Slots[selectedIndex];
 

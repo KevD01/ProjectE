@@ -6,12 +6,18 @@ public class PlayerHealth : MonoBehaviour
     [SerializeField] private int maxHealth = 100;
     [SerializeField] private int currentHealth = 100;
 
+    [Header("Muerte")]
+    [SerializeField] private bool disablePlayerOnDeath = true;
+
     [Header("Pruebas")]
     [SerializeField] private bool enableDebugKeys = true;
     [SerializeField] private KeyCode damageTestKey = KeyCode.K;
 
+    private bool isDead;
+
     public int CurrentHealth => currentHealth;
     public int MaxHealth => maxHealth;
+    public bool IsDead => isDead;
 
     private void Start()
     {
@@ -20,6 +26,9 @@ public class PlayerHealth : MonoBehaviour
 
     private void Update()
     {
+        if (isDead)
+            return;
+
         if (!enableDebugKeys)
             return;
 
@@ -31,6 +40,9 @@ public class PlayerHealth : MonoBehaviour
 
     public void TakeDamage(int amount)
     {
+        if (isDead)
+            return;
+
         if (amount <= 0)
             return;
 
@@ -47,6 +59,9 @@ public class PlayerHealth : MonoBehaviour
 
     public void Heal(int amount)
     {
+        if (isDead)
+            return;
+
         if (amount <= 0)
             return;
 
@@ -85,6 +100,67 @@ public class PlayerHealth : MonoBehaviour
 
     private void Die()
     {
+        if (isDead)
+            return;
+
+        isDead = true;
+
         Debug.Log("El jugador ha muerto.");
+
+        InteractionPromptUI.Instance?.Hide();
+
+        CloseOpenUIs();
+
+        if (disablePlayerOnDeath)
+        {
+            DisablePlayerControls();
+        }
+
+        if (GameOverUI.Instance != null)
+        {
+            GameOverUI.Instance.ShowGameOver();
+        }
+    }
+
+    private void CloseOpenUIs()
+    {
+        if (InventoryUI.Instance != null && InventoryUI.Instance.IsOpen)
+        {
+            InventoryUI.Instance.ForceClose();
+        }
+
+        if (NoteArchiveUI.Instance != null && NoteArchiveUI.Instance.IsOpen)
+        {
+            NoteArchiveUI.Instance.ForceClose();
+        }
+
+        if (NoteUI.Instance != null && NoteUI.Instance.IsOpen)
+        {
+            NoteUI.Instance.ForceClose();
+        }
+    }
+
+    private void DisablePlayerControls()
+    {
+        PlayerTankController movement = GetComponent<PlayerTankController>();
+
+        if (movement != null)
+        {
+            movement.enabled = false;
+        }
+
+        PlayerWeaponController weapon = GetComponent<PlayerWeaponController>();
+
+        if (weapon != null)
+        {
+            weapon.enabled = false;
+        }
+
+        CharacterController characterController = GetComponent<CharacterController>();
+
+        if (characterController != null)
+        {
+            characterController.enabled = false;
+        }
     }
 }

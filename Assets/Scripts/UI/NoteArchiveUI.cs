@@ -42,6 +42,9 @@ public class NoteArchiveUI : MonoBehaviour
 
     private void Update()
     {
+        if (GameOverUI.Instance != null && GameOverUI.Instance.IsGameOver)
+            return;
+
         if (NoteUI.Instance != null && NoteUI.Instance.IsOpen)
             return;
 
@@ -113,6 +116,16 @@ public class NoteArchiveUI : MonoBehaviour
         if (playerMovement != null)
         {
             playerMovement.enabled = true;
+        }
+    }
+
+    public void ForceClose()
+    {
+        isOpen = false;
+
+        if (archivePanel != null)
+        {
+            archivePanel.SetActive(false);
         }
     }
 

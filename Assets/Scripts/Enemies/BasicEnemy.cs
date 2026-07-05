@@ -55,6 +55,12 @@ public class BasicEnemy : MonoBehaviour
 
     private void HandleEnemyBehavior()
     {
+        if (playerHealth != null && playerHealth.IsDead)
+        {
+            ApplyGravity();
+            return;
+        }
+
         float distanceToPlayer = Vector3.Distance(transform.position, playerTransform.position);
 
         if (distanceToPlayer <= attackRange)
@@ -101,6 +107,9 @@ public class BasicEnemy : MonoBehaviour
 
     private void TryAttack()
     {
+        if (playerHealth != null && playerHealth.IsDead)
+            return;
+
         if (Time.time < lastAttackTime + attackCooldown)
             return;
 
@@ -150,6 +159,9 @@ public class BasicEnemy : MonoBehaviour
 
     private bool IsGameplayPaused()
     {
+        if (GameOverUI.Instance != null && GameOverUI.Instance.IsGameOver)
+            return true;
+
         if (NoteUI.Instance != null && NoteUI.Instance.IsOpen)
             return true;
 

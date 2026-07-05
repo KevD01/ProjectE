@@ -27,6 +27,9 @@ public class NoteUI : MonoBehaviour
 
     private void Update()
     {
+        if (GameOverUI.Instance != null && GameOverUI.Instance.IsGameOver)
+            return;
+
         if (!noteIsOpen)
             return;
 
@@ -38,6 +41,9 @@ public class NoteUI : MonoBehaviour
 
     public void OpenNote(string title, string body, PlayerTankController playerMovement)
     {
+        if (GameOverUI.Instance != null && GameOverUI.Instance.IsGameOver)
+            return;
+
         if (notePanel == null)
             return;
 
@@ -74,6 +80,17 @@ public class NoteUI : MonoBehaviour
         if (currentPlayerMovement != null)
         {
             currentPlayerMovement.enabled = true;
+        }
+
+        currentPlayerMovement = null;
+        noteIsOpen = false;
+    }
+
+    public void ForceClose()
+    {
+        if (notePanel != null)
+        {
+            notePanel.SetActive(false);
         }
 
         currentPlayerMovement = null;
