@@ -29,11 +29,17 @@ public class PlayerHealth : MonoBehaviour
     private bool isDead;
     private bool isInvulnerable;
     private Coroutine invulnerabilityRoutine;
+    private PlayerVisualReaction visualReaction;
 
     public int CurrentHealth => currentHealth;
     public int MaxHealth => maxHealth;
     public bool IsDead => isDead;
     public bool IsInvulnerable => isInvulnerable;
+
+    private void Awake()
+    {
+        visualReaction = GetComponent<PlayerVisualReaction>();
+    }
 
     private void Start()
     {
@@ -133,6 +139,11 @@ public class PlayerHealth : MonoBehaviour
         {
             DamageFlashUI.Instance.Flash(damageFlashAlpha, damageFlashTime);
         }
+
+        if (visualReaction != null)
+        {
+            visualReaction.PlayHitFlash();
+        }
     }
 
     private void StartInvulnerability()
@@ -143,6 +154,11 @@ public class PlayerHealth : MonoBehaviour
         }
 
         invulnerabilityRoutine = StartCoroutine(InvulnerabilityRoutine());
+
+        if (visualReaction != null)
+        {
+            visualReaction.StartInvulnerabilityBlink(invulnerabilityTime);
+        }
     }
 
     private IEnumerator InvulnerabilityRoutine()
@@ -169,6 +185,11 @@ public class PlayerHealth : MonoBehaviour
         if (DamageFlashUI.Instance != null)
         {
             DamageFlashUI.Instance.Flash(0.85f, 0.6f);
+        }
+
+        if (visualReaction != null)
+        {
+            visualReaction.PlayDeathVisual();
         }
 
         InteractionPromptUI.Instance?.Hide();
