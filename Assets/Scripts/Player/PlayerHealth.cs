@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 public class PlayerHealth : MonoBehaviour
@@ -5,6 +6,18 @@ public class PlayerHealth : MonoBehaviour
     [Header("Vida")]
     [SerializeField] private int maxHealth = 100;
     [SerializeField] private int currentHealth = 100;
+
+    [Header("Daño")]
+    [SerializeField] private bool useInvulnerabilityAfterHit = true;
+    [SerializeField] private float invulnerabilityTime = 0.6f;
+
+    [Header("Feedback de daño")]
+    [SerializeField] private AudioClip hurtSound;
+    [SerializeField] private AudioClip deathSound;
+    [SerializeField] private float hurtVolume = 0.8f;
+    [SerializeField] private float deathVolume = 1f;
+    [SerializeField] private float damageFlashAlpha = 0.65f;
+    [SerializeField] private float damageFlashTime = 0.35f;
 
     [Header("Muerte")]
     [SerializeField] private bool disablePlayerOnDeath = true;
@@ -14,10 +27,13 @@ public class PlayerHealth : MonoBehaviour
     [SerializeField] private KeyCode damageTestKey = KeyCode.K;
 
     private bool isDead;
+    private bool isInvulnerable;
+    private Coroutine invulnerabilityRoutine;
 
     public int CurrentHealth => currentHealth;
     public int MaxHealth => maxHealth;
     public bool IsDead => isDead;
+    public bool IsInvulnerable => isInvulnerable;
 
     private void Start()
     {
@@ -43,6 +59,9 @@ public class PlayerHealth : MonoBehaviour
         if (isDead)
             return;
 
+        if (useInvulnerabilityAfterHit && isInvulnerable)
+            return;
+
         if (amount <= 0)
             return;
 
@@ -54,6 +73,14 @@ public class PlayerHealth : MonoBehaviour
         if (currentHealth <= 0)
         {
             Die();
+            return;
+        }
+
+        PlayDamageFeedback();
+
+        if (useInvulnerabilityAfterHit)
+        {
+            StartInvulnerability();
         }
     }
 
@@ -98,6 +125,36 @@ public class PlayerHealth : MonoBehaviour
         return "Muerto";
     }
 
+    private void PlayDamageFeedback()
+    {
+        GameAudioManager.Instance?.PlaySFXNoPitch(hurtSound, hurtVolume);
+
+        if (DamageFlashUI.Instance != null)
+        {
+            DamageFlashUI.Instance.Flash(damageFlashAlpha, damageFlashTime);
+        }
+    }
+
+    private void StartInvulnerability()
+    {
+        if (invulnerabilityRoutine != null)
+        {
+            StopCoroutine(invulnerabilityRoutine);
+        }
+
+        invulnerabilityRoutine = StartCoroutine(InvulnerabilityRoutine());
+    }
+
+    private IEnumerator InvulnerabilityRoutine()
+    {
+        isInvulnerable = true;
+
+        yield return new WaitForSeconds(invulnerabilityTime);
+
+        isInvulnerable = false;
+        invulnerabilityRoutine = null;
+    }
+
     private void Die()
     {
         if (isDead)
@@ -106,6 +163,13 @@ public class PlayerHealth : MonoBehaviour
         isDead = true;
 
         Debug.Log("El jugador ha muerto.");
+
+        GameAudioManager.Instance?.PlaySFXNoPitch(deathSound, deathVolume);
+
+        if (DamageFlashUI.Instance != null)
+        {
+            DamageFlashUI.Instance.Flash(0.85f, 0.6f);
+        }
 
         InteractionPromptUI.Instance?.Hide();
 
