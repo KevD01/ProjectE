@@ -54,7 +54,9 @@ public class PlayerWeaponController : MonoBehaviour
     private float lastNoWeaponMessageTime;
     private bool isAiming;
     private bool isReloading;
+
     private Coroutine muzzleFlashRoutine;
+    private Coroutine reloadRoutine;
 
     public int CurrentAmmoInClip => currentAmmoInClip;
     public int MaxAmmoInClip => maxAmmoInClip;
@@ -225,7 +227,7 @@ public class PlayerWeaponController : MonoBehaviour
             return;
         }
 
-        StartCoroutine(ReloadRoutine());
+        reloadRoutine = StartCoroutine(ReloadRoutine());
     }
 
     private IEnumerator ReloadRoutine()
@@ -255,6 +257,36 @@ public class PlayerWeaponController : MonoBehaviour
         InteractionPromptUI.Instance?.Hide();
 
         isReloading = false;
+        reloadRoutine = null;
+    }
+
+    public void RestoreAmmoInClip(int ammoInClip)
+    {
+        if (reloadRoutine != null)
+        {
+            StopCoroutine(reloadRoutine);
+            reloadRoutine = null;
+        }
+
+        if (muzzleFlashRoutine != null)
+        {
+            StopCoroutine(muzzleFlashRoutine);
+            muzzleFlashRoutine = null;
+        }
+
+        isReloading = false;
+        SetAiming(false);
+
+        currentAmmoInClip = Mathf.Clamp(ammoInClip, 0, maxAmmoInClip);
+
+        if (muzzleFlashObject != null)
+        {
+            muzzleFlashObject.SetActive(false);
+        }
+
+        InteractionPromptUI.Instance?.Hide();
+
+        Debug.Log("Cargador restaurado desde checkpoint: " + currentAmmoInClip + "/" + maxAmmoInClip);
     }
 
     private void PlayShootFeedback()

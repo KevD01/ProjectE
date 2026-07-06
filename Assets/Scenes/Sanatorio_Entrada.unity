@@ -231,6 +231,52 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3001416}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &10545847
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 10545849}
+  - component: {fileID: 10545848}
+  m_Layer: 0
+  m_Name: CheckpointSystem
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &10545848
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 10545847}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 91cac2105b5e6584f8c0dcaedea7d09b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CheckpointManager
+  currentCheckpoint: {fileID: 764693790}
+  currentCameraPoint: {fileID: 1715717180}
+--- !u!4 &10545849
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 10545847}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &13453037
 GameObject:
   m_ObjectHideFlags: 0
@@ -1616,7 +1662,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PauseMenuUI
   canvasGroup: {fileID: 134521766}
+  menuBodyText: {fileID: 173489082}
   pauseKey: 27
+  controlsKey: 99
   restartKey: 114
   quitKey: 113
 --- !u!225 &134521766
@@ -2270,8 +2318,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: -20}
-  m_SizeDelta: {x: 700, y: 220}
+  m_AnchoredPosition: {x: 0, y: -80}
+  m_SizeDelta: {x: 900, y: 300}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &173489082
 MonoBehaviour:
@@ -2296,10 +2344,14 @@ MonoBehaviour:
   m_text: 'Escape - Continuar
 
 
+    C - Ver controles
+
+
     R - Reiniciar
 
 
-    Q - Salir del juego'
+    Q
+    - Salir del juego'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -2326,8 +2378,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 28
-  m_fontSizeBase: 28
+  m_fontSize: 26
+  m_fontSizeBase: 26
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -5128,7 +5180,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::GameOverUI
   canvasGroup: {fileID: 391086971}
   fadeTime: 1
-  restartKey: 114
+  respawnKey: 114
+  restartSceneKey: 116
 --- !u!225 &391086971
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -5936,6 +5989,7 @@ GameObject:
   - component: {fileID: 484295645}
   - component: {fileID: 484295644}
   - component: {fileID: 484295643}
+  - component: {fileID: 484295647}
   m_Layer: 0
   m_Name: Lab_Cabinet_Locked
   m_TagString: Untagged
@@ -6036,6 +6090,18 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1722505895}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &484295647
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 484295642}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: db213e024b8e41c40a15d3ca2a4eee4d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CheckpointRestorableObject
 --- !u!1 &485826079
 GameObject:
   m_ObjectHideFlags: 0
@@ -6646,7 +6712,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6203e9dd16bd65c4da9451abe2f117bb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerInventory
-  maxSlots: 8
+  slots: []
 --- !u!4 &511390435
 Transform:
   m_ObjectHideFlags: 0
@@ -7524,8 +7590,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 130}
-  m_SizeDelta: {x: 700, y: 100}
+  m_AnchoredPosition: {x: 0, y: 170}
+  m_SizeDelta: {x: 700, y: 90}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &577475201
 MonoBehaviour:
@@ -7766,6 +7832,7 @@ GameObject:
   - component: {fileID: 586481262}
   - component: {fileID: 586481261}
   - component: {fileID: 586481260}
+  - component: {fileID: 586481263}
   m_Layer: 0
   m_Name: Power_Blocking_Gate
   m_TagString: Untagged
@@ -7866,6 +7933,18 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 586481258}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &586481263
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 586481258}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: db213e024b8e41c40a15d3ca2a4eee4d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CheckpointRestorableObject
 --- !u!1 &593530875
 GameObject:
   m_ObjectHideFlags: 0
@@ -9538,6 +9617,7 @@ GameObject:
   - component: {fileID: 716935595}
   - component: {fileID: 716935594}
   - component: {fileID: 716935593}
+  - component: {fileID: 716935597}
   m_Layer: 0
   m_Name: Lab_Cabinet_Open
   m_TagString: Untagged
@@ -9638,6 +9718,18 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1722505895}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &716935597
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 716935592}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: db213e024b8e41c40a15d3ca2a4eee4d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CheckpointRestorableObject
 --- !u!1 &719198467
 GameObject:
   m_ObjectHideFlags: 0
@@ -10101,6 +10193,37 @@ Transform:
   - {fileID: 1037388156}
   - {fileID: 1066350125}
   m_Father: {fileID: 768641388}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &764693789
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 764693790}
+  m_Layer: 0
+  m_Name: SPAWN_Checkpoint_Start
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &764693790
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 764693789}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 1.05, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1646723539}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &765613255
 GameObject:
@@ -11078,8 +11201,8 @@ MonoBehaviour:
   alwaysDrop: 0
   dropChance: 0.5
   dropOffset: {x: 0, y: -0.75, z: 0}
-  destroyOnDeath: 1
-  destroyDelay: 1
+  disableOnDeath: 1
+  disableDelay: 0.6
 --- !u!114 &818129625
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -12829,6 +12952,135 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 984843219}
   m_CullTransparentMesh: 1
+--- !u!1 &993907680
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 993907681}
+  - component: {fileID: 993907685}
+  - component: {fileID: 993907684}
+  - component: {fileID: 993907683}
+  - component: {fileID: 993907682}
+  m_Layer: 0
+  m_Name: TRG_Checkpoint_EmergencyExit
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &993907681
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 993907680}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 20, y: 1, z: 49}
+  m_LocalScale: {x: 2, y: 2, z: 8}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1574235265}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &993907682
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 993907680}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 055c68714c648a244bec707ba3ef6e57, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CheckpointTrigger
+  checkpointSpawnPoint: {fileID: 1397645381}
+  checkpointCameraPoint: {fileID: 297195702}
+  saveOnlyOnce: 1
+  showDebug: 1
+--- !u!65 &993907683
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 993907680}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1, y: 1, z: 1}
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!23 &993907684
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 993907680}
+  m_Enabled: 0
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &993907685
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 993907680}
+  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!1 &996164528
 GameObject:
   m_ObjectHideFlags: 0
@@ -12907,8 +13159,8 @@ MonoBehaviour:
   alwaysDrop: 0
   dropChance: 0.5
   dropOffset: {x: 0, y: -0.75, z: 0}
-  destroyOnDeath: 1
-  destroyDelay: 1
+  disableOnDeath: 1
+  disableDelay: 0.6
 --- !u!114 &996164532
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -15790,6 +16042,135 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1158461607}
   m_CullTransparentMesh: 1
+--- !u!1 &1161516690
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1161516691}
+  - component: {fileID: 1161516695}
+  - component: {fileID: 1161516694}
+  - component: {fileID: 1161516693}
+  - component: {fileID: 1161516692}
+  m_Layer: 0
+  m_Name: TRG_Checkpoint_Lab
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1161516691
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1161516690}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 12, y: 1, z: 46}
+  m_LocalScale: {x: 6, y: 2, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2022538737}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1161516692
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1161516690}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 055c68714c648a244bec707ba3ef6e57, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CheckpointTrigger
+  checkpointSpawnPoint: {fileID: 670831465}
+  checkpointCameraPoint: {fileID: 1678939700}
+  saveOnlyOnce: 1
+  showDebug: 1
+--- !u!65 &1161516693
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1161516690}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1, y: 1, z: 1}
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!23 &1161516694
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1161516690}
+  m_Enabled: 0
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &1161516695
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1161516690}
+  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!1 &1176600159
 GameObject:
   m_ObjectHideFlags: 0
@@ -16763,6 +17144,7 @@ GameObject:
   - component: {fileID: 1230083094}
   - component: {fileID: 1230083096}
   - component: {fileID: 1230083095}
+  - component: {fileID: 1230083097}
   m_Layer: 0
   m_Name: Light_Lab_Alarm
   m_TagString: Untagged
@@ -16879,6 +17261,18 @@ Light:
   m_LightUnit: 1
   m_LuxAtDistance: 1
   m_EnableSpotReflector: 1
+--- !u!114 &1230083097
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1230083093}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: db213e024b8e41c40a15d3ca2a4eee4d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CheckpointRestorableObject
 --- !u!1 &1233708817
 GameObject:
   m_ObjectHideFlags: 0
@@ -17115,6 +17509,7 @@ GameObject:
   - component: {fileID: 1249543766}
   - component: {fileID: 1249543765}
   - component: {fileID: 1249543764}
+  - component: {fileID: 1249543767}
   m_Layer: 0
   m_Name: Valve_Installed_Visual
   m_TagString: Untagged
@@ -17215,6 +17610,18 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1249543762}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &1249543767
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1249543762}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: db213e024b8e41c40a15d3ca2a4eee4d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CheckpointRestorableObject
 --- !u!1 &1251232129
 GameObject:
   m_ObjectHideFlags: 0
@@ -19668,6 +20075,7 @@ GameObject:
   - component: {fileID: 1497483298}
   - component: {fileID: 1497483297}
   - component: {fileID: 1497483296}
+  - component: {fileID: 1497483299}
   m_Layer: 0
   m_Name: Lab_Drawer_Locked
   m_TagString: Untagged
@@ -19768,6 +20176,18 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1497483294}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &1497483299
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1497483294}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: db213e024b8e41c40a15d3ca2a4eee4d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CheckpointRestorableObject
 --- !u!1 &1505983663
 GameObject:
   m_ObjectHideFlags: 0
@@ -20408,6 +20828,7 @@ Transform:
   - {fileID: 1822925532}
   - {fileID: 800524633}
   - {fileID: 977218969}
+  - {fileID: 993907681}
   m_Father: {fileID: 2052907029}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1579394191
@@ -20620,8 +21041,8 @@ MonoBehaviour:
   alwaysDrop: 0
   dropChance: 0.5
   dropOffset: {x: 0, y: -0.75, z: 0}
-  destroyOnDeath: 1
-  destroyDelay: 1
+  disableOnDeath: 1
+  disableDelay: 0.6
 --- !u!114 &1579394199
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -20781,6 +21202,7 @@ GameObject:
   - component: {fileID: 1610967665}
   - component: {fileID: 1610967664}
   - component: {fileID: 1610967663}
+  - component: {fileID: 1610967666}
   m_Layer: 0
   m_Name: Lab_Drawer_Open
   m_TagString: Untagged
@@ -20881,6 +21303,18 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1610967661}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &1610967666
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1610967661}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: db213e024b8e41c40a15d3ca2a4eee4d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CheckpointRestorableObject
 --- !u!1 &1611367240
 GameObject:
   m_ObjectHideFlags: 0
@@ -21552,6 +21986,7 @@ Transform:
   - {fileID: 1715717180}
   - {fileID: 1035835466}
   - {fileID: 1846727325}
+  - {fileID: 764693790}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1654434415
@@ -23361,7 +23796,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 0, g: 0, b: 0, a: 0.7058824}
+  m_Color: {r: 0, g: 0, b: 0, a: 0.8627451}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -26306,6 +26741,7 @@ Transform:
   - {fileID: 2030183418}
   - {fileID: 2064372329}
   - {fileID: 1843992836}
+  - {fileID: 1161516691}
   m_Father: {fileID: 333263615}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2025539429
@@ -26858,6 +27294,7 @@ GameObject:
   - component: {fileID: 2067190152}
   - component: {fileID: 2067190151}
   - component: {fileID: 2067190150}
+  - component: {fileID: 2067190154}
   m_Layer: 0
   m_Name: Steam_Blocking_Path
   m_TagString: Untagged
@@ -26958,6 +27395,18 @@ Transform:
   m_Children: []
   m_Father: {fileID: 854966573}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2067190154
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2067190149}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: db213e024b8e41c40a15d3ca2a4eee4d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CheckpointRestorableObject
 --- !u!1 &2068537532
 GameObject:
   m_ObjectHideFlags: 0
@@ -27906,9 +28355,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 'Presiona R para reiniciar
-
-'
+  m_text: "Presiona R para volver al \xFAltimo checkpoint\r\n\r\nPresiona T para
+    reiniciar desde el inicio"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -28000,6 +28448,7 @@ SceneRoots:
   - {fileID: 519333483}
   - {fileID: 511390435}
   - {fileID: 1957292704}
+  - {fileID: 10545849}
   - {fileID: 1476807298}
   - {fileID: 1385974088}
   - {fileID: 1023896023}

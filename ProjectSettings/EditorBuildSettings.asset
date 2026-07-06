@@ -6,6 +6,9 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
+    path: Assets/Scenes/MainMenu.unity
+    guid: 21c66801b626421409197017f12778ff
+  - enabled: 1
     path: Assets/Scenes/Sanatorio_Entrada.unity
     guid: 2697dc1afe9332a458dec70009d6a224
   - enabled: 1

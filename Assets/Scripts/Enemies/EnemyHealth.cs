@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 public class EnemyHealth : MonoBehaviour
@@ -15,16 +16,19 @@ public class EnemyHealth : MonoBehaviour
     [Header("Drop al morir")]
     [SerializeField] private GameObject dropPrefab;
     [SerializeField] private bool alwaysDrop = true;
+
     [Range(0f, 1f)]
     [SerializeField] private float dropChance = 0.5f;
+
     [SerializeField] private Vector3 dropOffset = new Vector3(0f, -0.75f, 0f);
 
     [Header("Muerte")]
-    [SerializeField] private bool destroyOnDeath = true;
-    [SerializeField] private float destroyDelay = 0.6f;
+    [SerializeField] private bool disableOnDeath = true;
+    [SerializeField] private float disableDelay = 0.6f;
 
     private bool isDead;
     private EnemyHitReaction hitReaction;
+    private Coroutine disableRoutine;
 
     public bool IsDead => isDead;
     public int CurrentHealth => currentHealth;
@@ -90,34 +94,24 @@ public class EnemyHealth : MonoBehaviour
             hitReaction.StopReaction();
         }
 
-        BasicEnemy enemyMovement = GetComponent<BasicEnemy>();
-
-        if (enemyMovement != null)
-        {
-            enemyMovement.enabled = false;
-        }
-
-        CharacterController characterController = GetComponent<CharacterController>();
-
-        if (characterController != null)
-        {
-            characterController.enabled = false;
-        }
-
-        Collider enemyCollider = GetComponent<Collider>();
-
-        if (enemyCollider != null)
-        {
-            enemyCollider.enabled = false;
-        }
+        SetEnemyComponentsEnabled(false);
 
         transform.rotation = Quaternion.Euler(90f, transform.eulerAngles.y, 0f);
         transform.position += Vector3.down * 0.6f;
 
-        if (destroyOnDeath)
+        if (disableOnDeath)
         {
-            Destroy(gameObject, destroyDelay);
+            disableRoutine = StartCoroutine(DisableAfterDeathRoutine());
         }
+    }
+
+    private IEnumerator DisableAfterDeathRoutine()
+    {
+        yield return new WaitForSeconds(disableDelay);
+
+        gameObject.SetActive(false);
+
+        disableRoutine = null;
     }
 
     private void DropItem()
@@ -144,6 +138,85 @@ public class EnemyHealth : MonoBehaviour
             Quaternion.identity
         );
 
+        CheckpointSpawnedObject checkpointSpawnedObject =
+            spawnedDrop.GetComponent<CheckpointSpawnedObject>();
+
+        if (checkpointSpawnedObject == null)
+        {
+            checkpointSpawnedObject = spawnedDrop.AddComponent<CheckpointSpawnedObject>();
+        }
+
+        int version = 0;
+
+        if (CheckpointManager.Instance != null)
+        {
+            version = CheckpointManager.Instance.CurrentCheckpointVersion;
+        }
+
+        checkpointSpawnedObject.MarkSpawned(version);
+
         Debug.Log(gameObject.name + " soltó: " + spawnedDrop.name);
+    }
+
+    public void RestoreFromCheckpoint(
+        bool activeState,
+        bool savedIsDead,
+        int savedHealth,
+        Vector3 savedPosition,
+        Quaternion savedRotation
+    )
+    {
+        if (disableRoutine != null)
+        {
+            StopCoroutine(disableRoutine);
+            disableRoutine = null;
+        }
+
+        gameObject.SetActive(activeState);
+
+        transform.SetPositionAndRotation(savedPosition, savedRotation);
+
+        isDead = savedIsDead;
+        currentHealth = Mathf.Clamp(savedHealth, 0, maxHealth);
+
+        if (hitReaction != null)
+        {
+            hitReaction.StopReaction();
+        }
+
+        if (activeState && !isDead)
+        {
+            SetEnemyComponentsEnabled(true);
+        }
+        else
+        {
+            SetEnemyComponentsEnabled(false);
+        }
+
+        Debug.Log(gameObject.name + " restaurado desde checkpoint.");
+    }
+
+    private void SetEnemyComponentsEnabled(bool enabledState)
+    {
+        BasicEnemy enemyMovement = GetComponent<BasicEnemy>();
+
+        if (enemyMovement != null)
+        {
+            enemyMovement.enabled = enabledState;
+        }
+
+        CharacterController characterController = GetComponent<CharacterController>();
+
+        if (characterController != null)
+        {
+            characterController.enabled = enabledState;
+        }
+
+        Collider enemyCollider = GetComponent<Collider>();
+
+        if (enemyCollider != null)
+        {
+            enemyCollider.enabled = enabledState;
+        }
     }
 }

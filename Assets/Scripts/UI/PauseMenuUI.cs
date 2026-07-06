@@ -1,3 +1,4 @@
+using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -7,13 +8,16 @@ public class PauseMenuUI : MonoBehaviour
 
     [Header("Referencias")]
     [SerializeField] private CanvasGroup canvasGroup;
+    [SerializeField] private TMP_Text menuBodyText;
 
     [Header("Input")]
     [SerializeField] private KeyCode pauseKey = KeyCode.Escape;
+    [SerializeField] private KeyCode controlsKey = KeyCode.C;
     [SerializeField] private KeyCode restartKey = KeyCode.R;
     [SerializeField] private KeyCode quitKey = KeyCode.Q;
 
     private bool isPaused;
+    private bool showingControls;
 
     public bool IsPaused => isPaused;
 
@@ -39,22 +43,20 @@ public class PauseMenuUI : MonoBehaviour
 
         if (Input.GetKeyDown(pauseKey))
         {
-            if (isPaused)
-            {
-                ResumeGame();
-            }
-            else
-            {
-                if (IsAnotherUIOpen())
-                    return;
-
-                PauseGame();
-            }
-
+            HandlePauseKey();
             return;
         }
 
         if (!isPaused)
+            return;
+
+        if (Input.GetKeyDown(controlsKey))
+        {
+            ToggleControlsScreen();
+            return;
+        }
+
+        if (showingControls)
             return;
 
         if (Input.GetKeyDown(restartKey))
@@ -70,18 +72,40 @@ public class PauseMenuUI : MonoBehaviour
         }
     }
 
+    private void HandlePauseKey()
+    {
+        if (isPaused)
+        {
+            if (showingControls)
+            {
+                ShowMainPauseText();
+                return;
+            }
+
+            ResumeGame();
+            return;
+        }
+
+        if (IsAnotherUIOpen())
+            return;
+
+        PauseGame();
+    }
+
     public void PauseGame()
     {
         if (isPaused)
             return;
 
         isPaused = true;
+        showingControls = false;
 
         Time.timeScale = 0f;
 
         InteractionPromptUI.Instance?.Hide();
 
         ShowPauseMenu();
+        ShowMainPauseText();
     }
 
     public void ResumeGame()
@@ -90,10 +114,59 @@ public class PauseMenuUI : MonoBehaviour
             return;
 
         isPaused = false;
+        showingControls = false;
 
         Time.timeScale = 1f;
 
         HidePauseMenuInstant();
+    }
+
+    private void ToggleControlsScreen()
+    {
+        if (showingControls)
+        {
+            ShowMainPauseText();
+        }
+        else
+        {
+            ShowControlsText();
+        }
+    }
+
+    private void ShowMainPauseText()
+    {
+        showingControls = false;
+
+        if (menuBodyText == null)
+            return;
+
+        menuBodyText.text =
+            "Escape - Continuar\n\n" +
+            "C - Ver controles\n\n" +
+            "R - Reiniciar\n\n" +
+            "Q - Salir del juego";
+    }
+
+    private void ShowControlsText()
+    {
+        showingControls = true;
+
+        if (menuBodyText == null)
+            return;
+
+        menuBodyText.text =
+            "CONTROLES\n\n" +
+            "W / S - Caminar adelante / atrás\n" +
+            "A / D - Girar\n" +
+            "Shift - Correr\n\n" +
+            "E - Interactuar / recoger / usar\n" +
+            "I - Inventario\n" +
+            "J - Archivo de notas\n\n" +
+            "Click derecho - Apuntar\n" +
+            "Click izquierdo - Disparar\n" +
+            "R - Recargar\n\n" +
+            "Escape - Volver\n" +
+            "C - Volver al menú de pausa";
     }
 
     private void ShowPauseMenu()

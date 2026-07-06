@@ -5,75 +5,87 @@ public class PlayerInventory : MonoBehaviour
 {
     public static PlayerInventory Instance;
 
-    [Header("Configuración")]
-    [SerializeField] private int maxSlots = 8;
+    [System.Serializable]
+    public class InventorySaveEntry
+    {
+        public ItemData itemData;
+        public int quantity;
 
-    private readonly List<InventorySlot> slots = new List<InventorySlot>();
+        public InventorySaveEntry(ItemData itemData, int quantity)
+        {
+            this.itemData = itemData;
+            this.quantity = quantity;
+        }
+    }
 
-    public IReadOnlyList<InventorySlot> Slots => slots;
-    public int MaxSlots => maxSlots;
+    [Header("Inventario")]
+    [SerializeField] private List<InventorySlot> slots = new List<InventorySlot>();
+
+    public List<InventorySlot> Slots => slots;
 
     private void Awake()
     {
-        if (Instance != null && Instance != this)
-        {
-            Destroy(gameObject);
-            return;
-        }
-
         Instance = this;
     }
 
-    public bool AddItem(ItemData itemData, int amount)
+    public void AddItem(ItemData itemData, int amount = 1)
     {
         if (itemData == null)
-            return false;
+            return;
 
         if (amount <= 0)
-            return false;
+            return;
 
         if (itemData.canStack)
         {
-            foreach (InventorySlot slot in slots)
-            {
-                if (slot.itemData == itemData && slot.quantity < itemData.maxStack)
-                {
-                    int availableSpace = itemData.maxStack - slot.quantity;
-                    int amountToAdd = Mathf.Min(availableSpace, amount);
-
-                    slot.quantity += amountToAdd;
-                    amount -= amountToAdd;
-
-                    if (amount <= 0)
-                    {
-                        Debug.Log("Objeto agregado: " + itemData.itemName);
-                        return true;
-                    }
-                }
-            }
+            AddStackableItem(itemData, amount);
+        }
+        else
+        {
+            AddNonStackableItem(itemData, amount);
         }
 
-        while (amount > 0)
-        {
-            if (slots.Count >= maxSlots)
-            {
-                Debug.Log("Inventario lleno.");
-                return false;
-            }
+        Debug.Log("Objeto agregado: " + itemData.itemName + " x" + amount);
+    }
 
-            int amountForNewSlot = itemData.canStack
-                ? Mathf.Min(amount, itemData.maxStack)
-                : 1;
+    private void AddStackableItem(ItemData itemData, int amount)
+    {
+        int remainingAmount = amount;
+
+        foreach (InventorySlot slot in slots)
+        {
+            if (slot == null || slot.itemData != itemData)
+                continue;
+
+            if (slot.quantity >= itemData.maxStack)
+                continue;
+
+            int availableSpace = itemData.maxStack - slot.quantity;
+            int amountToAdd = Mathf.Min(availableSpace, remainingAmount);
+
+            slot.quantity += amountToAdd;
+            remainingAmount -= amountToAdd;
+
+            if (remainingAmount <= 0)
+                return;
+        }
+
+        while (remainingAmount > 0)
+        {
+            int amountForNewSlot = Mathf.Min(itemData.maxStack, remainingAmount);
 
             slots.Add(new InventorySlot(itemData, amountForNewSlot));
-            amount -= amountForNewSlot;
 
-            if (!itemData.canStack)
-                break;
+            remainingAmount -= amountForNewSlot;
         }
+    }
 
-        Debug.Log("Objeto agregado: " + itemData.itemName);
-        return true;
+    private void AddNonStackableItem(ItemData itemData, int amount)
+    {
+        for (int i = 0; i < amount; i++)
+        {
+            slots.Add(new InventorySlot(itemData, 1));
+        }
     }
 
     public bool HasItem(ItemData itemData)
@@ -83,7 +95,10 @@ public class PlayerInventory : MonoBehaviour
 
         foreach (InventorySlot slot in slots)
         {
-            if (slot.itemData == itemData)
+            if (slot == null)
+                continue;
+
+            if (slot.itemData == itemData && slot.quantity > 0)
                 return true;
         }
 
@@ -99,6 +114,9 @@ public class PlayerInventory : MonoBehaviour
 
         foreach (InventorySlot slot in slots)
         {
+            if (slot == null)
+                continue;
+
             if (slot.itemData == itemData)
             {
                 total += slot.quantity;
@@ -108,7 +126,7 @@ public class PlayerInventory : MonoBehaviour
         return total;
     }
 
-    public bool RemoveItem(ItemData itemData, int amount)
+    public bool RemoveItem(ItemData itemData, int amount = 1)
     {
         if (itemData == null)
             return false;
@@ -119,38 +137,44 @@ public class PlayerInventory : MonoBehaviour
         if (GetTotalQuantity(itemData) < amount)
             return false;
 
+        int remainingAmount = amount;
+
         for (int i = slots.Count - 1; i >= 0; i--)
         {
             InventorySlot slot = slots[i];
 
-            if (slot.itemData != itemData)
+            if (slot == null || slot.itemData != itemData)
                 continue;
 
-            int amountToRemove = Mathf.Min(slot.quantity, amount);
+            int amountToRemove = Mathf.Min(slot.quantity, remainingAmount);
+
             slot.quantity -= amountToRemove;
-            amount -= amountToRemove;
+            remainingAmount -= amountToRemove;
 
             if (slot.quantity <= 0)
             {
                 slots.RemoveAt(i);
             }
 
-            if (amount <= 0)
+            if (remainingAmount <= 0)
                 return true;
         }
 
         return true;
     }
 
-    public bool RemoveAt(int index, int amount)
+    public bool RemoveAt(int index, int amount = 1)
     {
         if (index < 0 || index >= slots.Count)
             return false;
 
-        if (amount <= 0)
+        InventorySlot slot = slots[index];
+
+        if (slot == null)
             return false;
 
-        InventorySlot slot = slots[index];
+        if (amount <= 0)
+            return false;
 
         slot.quantity -= amount;
 
@@ -160,5 +184,55 @@ public class PlayerInventory : MonoBehaviour
         }
 
         return true;
+    }
+
+    public List<InventorySaveEntry> CaptureInventorySnapshot()
+    {
+        List<InventorySaveEntry> snapshot = new List<InventorySaveEntry>();
+
+        foreach (InventorySlot slot in slots)
+        {
+            if (slot == null)
+                continue;
+
+            if (slot.itemData == null)
+                continue;
+
+            if (slot.quantity <= 0)
+                continue;
+
+            snapshot.Add(new InventorySaveEntry(slot.itemData, slot.quantity));
+        }
+
+        return snapshot;
+    }
+
+    public void RestoreInventorySnapshot(List<InventorySaveEntry> snapshot)
+    {
+        slots.Clear();
+
+        if (snapshot == null)
+            return;
+
+        foreach (InventorySaveEntry entry in snapshot)
+        {
+            if (entry == null)
+                continue;
+
+            if (entry.itemData == null)
+                continue;
+
+            if (entry.quantity <= 0)
+                continue;
+
+            slots.Add(new InventorySlot(entry.itemData, entry.quantity));
+        }
+
+        Debug.Log("Inventario restaurado desde checkpoint.");
+    }
+
+    public void ClearInventory()
+    {
+        slots.Clear();
     }
 }

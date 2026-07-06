@@ -21,6 +21,8 @@ public class PlayerVisualReaction : MonoBehaviour
     [SerializeField] private float deathRotateTime = 0.45f;
 
     private Color[] originalColors;
+    private Quaternion originalLocalRotation;
+
     private Coroutine hitRoutine;
     private Coroutine blinkRoutine;
     private Coroutine deathRoutine;
@@ -32,6 +34,8 @@ public class PlayerVisualReaction : MonoBehaviour
         {
             visualRoot = transform;
         }
+
+        originalLocalRotation = visualRoot.localRotation;
 
         if (renderersToAffect == null || renderersToAffect.Length <= 0)
         {
@@ -153,6 +157,21 @@ public class PlayerVisualReaction : MonoBehaviour
 
         visualRoot.localRotation = targetRotation;
         deathRoutine = null;
+    }
+
+    public void ResetVisual()
+    {
+        isDead = false;
+
+        StopAllVisualRoutines();
+
+        SetRenderersVisible(true);
+        RestoreOriginalColors();
+
+        if (visualRoot != null)
+        {
+            visualRoot.localRotation = originalLocalRotation;
+        }
     }
 
     private void StopAllVisualRoutines()

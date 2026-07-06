@@ -40,11 +40,23 @@ public class ItemPickup : MonoBehaviour
 
     private Renderer[] renderers;
     private Collider[] colliders;
+    private Coroutine pickupRoutine;
 
     private void Awake()
     {
-        renderers = GetComponentsInChildren<Renderer>();
-        colliders = GetComponentsInChildren<Collider>();
+        renderers = GetComponentsInChildren<Renderer>(true);
+        colliders = GetComponentsInChildren<Collider>(true);
+    }
+
+    private void OnEnable()
+    {
+        isPickedUp = false;
+        promptIsVisible = false;
+
+        if (playerObject == null)
+        {
+            playerObject = GameObject.FindGameObjectWithTag("Player");
+        }
     }
 
     private void Start()
@@ -146,7 +158,7 @@ public class ItemPickup : MonoBehaviour
 
         PlayerInventory.Instance.AddItem(itemData, amount);
 
-        StartCoroutine(PickupRoutine());
+        pickupRoutine = StartCoroutine(PickupRoutine());
     }
 
     private IEnumerator PickupRoutine()
@@ -172,7 +184,7 @@ public class ItemPickup : MonoBehaviour
 
         InteractionPromptUI.Instance?.Hide();
 
-        Destroy(gameObject);
+        gameObject.SetActive(false);
     }
 
     private string BuildCollectedMessage()
@@ -271,6 +283,57 @@ public class ItemPickup : MonoBehaviour
                 {
                     col.enabled = false;
                 }
+            }
+        }
+    }
+
+    private void EnableVisualAndColliders()
+    {
+        if (renderers != null)
+        {
+            foreach (Renderer rend in renderers)
+            {
+                if (rend != null)
+                {
+                    rend.enabled = true;
+                }
+            }
+        }
+
+        if (colliders != null)
+        {
+            foreach (Collider col in colliders)
+            {
+                if (col != null)
+                {
+                    col.enabled = true;
+                }
+            }
+        }
+    }
+
+    public void RestorePickupFromCheckpoint(bool activeState)
+    {
+        if (pickupRoutine != null)
+        {
+            StopCoroutine(pickupRoutine);
+            pickupRoutine = null;
+        }
+
+        isPickedUp = false;
+        promptIsVisible = false;
+
+        InteractionPromptUI.Instance?.Hide();
+
+        gameObject.SetActive(activeState);
+
+        if (activeState)
+        {
+            EnableVisualAndColliders();
+
+            if (playerObject == null)
+            {
+                playerObject = GameObject.FindGameObjectWithTag("Player");
             }
         }
     }

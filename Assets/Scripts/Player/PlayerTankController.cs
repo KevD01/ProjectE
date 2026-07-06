@@ -72,6 +72,11 @@ public class PlayerTankController : MonoBehaviour
         if (destination == null)
             return;
 
+        TeleportToPosition(destination.position, destination.rotation);
+    }
+
+    public void TeleportToPosition(Vector3 position, Quaternion rotation)
+    {
         if (characterController == null)
         {
             characterController = GetComponent<CharacterController>();
@@ -84,7 +89,7 @@ public class PlayerTankController : MonoBehaviour
             characterController.enabled = false;
         }
 
-        transform.SetPositionAndRotation(destination.position, destination.rotation);
+        transform.SetPositionAndRotation(position, rotation);
 
         ResetVerticalVelocity();
 
@@ -94,7 +99,11 @@ public class PlayerTankController : MonoBehaviour
         }
 
         Physics.SyncTransforms();
-        characterController.Move(Vector3.zero);
+
+        if (characterController.enabled)
+        {
+            characterController.Move(Vector3.zero);
+        }
     }
 
     private void OnDisable()

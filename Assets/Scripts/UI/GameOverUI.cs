@@ -13,7 +13,8 @@ public class GameOverUI : MonoBehaviour
     [SerializeField] private float fadeTime = 1f;
 
     [Header("Input")]
-    [SerializeField] private KeyCode restartKey = KeyCode.R;
+    [SerializeField] private KeyCode respawnKey = KeyCode.R;
+    [SerializeField] private KeyCode restartSceneKey = KeyCode.T;
 
     private bool isGameOver;
     private Coroutine fadeRoutine;
@@ -37,9 +38,16 @@ public class GameOverUI : MonoBehaviour
         if (!isGameOver)
             return;
 
-        if (Input.GetKeyDown(restartKey))
+        if (Input.GetKeyDown(respawnKey))
+        {
+            RespawnFromCheckpoint();
+            return;
+        }
+
+        if (Input.GetKeyDown(restartSceneKey))
         {
             RestartScene();
+            return;
         }
     }
 
@@ -80,6 +88,25 @@ public class GameOverUI : MonoBehaviour
         }
 
         canvasGroup.alpha = 1f;
+    }
+
+    private void RespawnFromCheckpoint()
+    {
+        GameObject player = GameObject.FindGameObjectWithTag("Player");
+
+        if (player == null)
+            return;
+
+        PlayerHealth playerHealth = player.GetComponent<PlayerHealth>();
+
+        if (playerHealth == null)
+            return;
+
+        HideInstant();
+
+        isGameOver = false;
+
+        playerHealth.RespawnFromCheckpoint();
     }
 
     private void HideInstant()

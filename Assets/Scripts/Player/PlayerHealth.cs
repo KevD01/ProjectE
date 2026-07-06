@@ -207,6 +207,44 @@ public class PlayerHealth : MonoBehaviour
         }
     }
 
+    public void RespawnFromCheckpoint()
+    {
+        isDead = false;
+        isInvulnerable = false;
+
+        if (invulnerabilityRoutine != null)
+        {
+            StopCoroutine(invulnerabilityRoutine);
+            invulnerabilityRoutine = null;
+        }
+
+        if (CheckpointManager.Instance != null)
+        {
+            CheckpointManager.Instance.RespawnPlayer(gameObject);
+        }
+        else
+        {
+            currentHealth = maxHealth;
+        }
+
+        EnablePlayerControls();
+
+        if (visualReaction != null)
+        {
+            visualReaction.ResetVisual();
+        }
+
+        StartInvulnerability();
+
+        Debug.Log("Jugador reapareció desde checkpoint.");
+    }
+
+    public void RestoreHealthFromCheckpoint(int healthValue)
+    {
+        currentHealth = Mathf.Clamp(healthValue, 1, maxHealth);
+        Debug.Log("Vida restaurada desde checkpoint: " + currentHealth);
+    }
+
     private void CloseOpenUIs()
     {
         if (InventoryUI.Instance != null && InventoryUI.Instance.IsOpen)
@@ -246,6 +284,30 @@ public class PlayerHealth : MonoBehaviour
         if (characterController != null)
         {
             characterController.enabled = false;
+        }
+    }
+
+    private void EnablePlayerControls()
+    {
+        CharacterController characterController = GetComponent<CharacterController>();
+
+        if (characterController != null)
+        {
+            characterController.enabled = true;
+        }
+
+        PlayerTankController movement = GetComponent<PlayerTankController>();
+
+        if (movement != null)
+        {
+            movement.enabled = true;
+        }
+
+        PlayerWeaponController weapon = GetComponent<PlayerWeaponController>();
+
+        if (weapon != null)
+        {
+            weapon.enabled = true;
         }
     }
 }
