@@ -39,6 +39,10 @@ public class PlayerWeaponController : MonoBehaviour
     [SerializeField] private float reloadVolume = 0.8f;
     [SerializeField] private float emptyGunVolume = 0.7f;
 
+    [Header("Ruido")]
+    [SerializeField] private bool shootMakesNoise = true;
+    [SerializeField] private float shootNoiseRange = 12f;
+
     [Header("Mensajes")]
     [SerializeField] private float noWeaponMessageCooldown = 1.2f;
 
@@ -160,6 +164,7 @@ public class PlayerWeaponController : MonoBehaviour
         lastFireTime = Time.time;
 
         PlayShootFeedback();
+        MakeShootNoise();
 
         EnemyHealth enemy = FindEnemyInFront();
 
@@ -187,6 +192,9 @@ public class PlayerWeaponController : MonoBehaviour
 
     private void TryReload()
     {
+        if (!HasRequiredWeaponEquipped())
+            return;
+
         if (ammoItem == null)
         {
             Debug.LogWarning("No hay Ammo Item asignado.");
@@ -249,38 +257,6 @@ public class PlayerWeaponController : MonoBehaviour
         isReloading = false;
     }
 
-    public int GetReserveAmmo()
-    {
-        if (ammoItem == null || PlayerInventory.Instance == null)
-            return 0;
-
-        return PlayerInventory.Instance.GetTotalQuantity(ammoItem);
-    }
-
-    public bool HasRequiredWeaponEquipped()
-    {
-        if (requiredWeaponItem == null)
-            return true;
-
-        if (PlayerEquipment.Instance == null)
-            return false;
-
-        return PlayerEquipment.Instance.HasEquippedWeapon(requiredWeaponItem);
-    }
-
-    private void ShowNoWeaponMessage()
-    {
-        if (Time.time < lastNoWeaponMessageTime + noWeaponMessageCooldown)
-            return;
-
-        lastNoWeaponMessageTime = Time.time;
-
-        GameAudioManager.Instance?.PlaySFX(noWeaponSound, emptyGunVolume);
-
-        InteractionPromptUI.Instance?.Show("No tienes una pistola equipada.");
-        Invoke(nameof(HidePrompt), 1.2f);
-    }
-
     private void PlayShootFeedback()
     {
         GameAudioManager.Instance?.PlaySFX(shootSound, shootVolume);
@@ -299,6 +275,14 @@ public class PlayerWeaponController : MonoBehaviour
         {
             CameraShake.Instance.Shake(cameraShakeDuration, cameraShakeStrength);
         }
+    }
+
+    private void MakeShootNoise()
+    {
+        if (!shootMakesNoise)
+            return;
+
+        NoiseSystem.EmitNoise(transform.position, shootNoiseRange);
     }
 
     private IEnumerator MuzzleFlashRoutine()
@@ -371,6 +355,38 @@ public class PlayerWeaponController : MonoBehaviour
         return transform.position + Vector3.up * 1.35f + transform.forward * 1.1f;
     }
 
+    public int GetReserveAmmo()
+    {
+        if (ammoItem == null || PlayerInventory.Instance == null)
+            return 0;
+
+        return PlayerInventory.Instance.GetTotalQuantity(ammoItem);
+    }
+
+    public bool HasRequiredWeaponEquipped()
+    {
+        if (requiredWeaponItem == null)
+            return true;
+
+        if (PlayerEquipment.Instance == null)
+            return false;
+
+        return PlayerEquipment.Instance.HasEquippedWeapon(requiredWeaponItem);
+    }
+
+    private void ShowNoWeaponMessage()
+    {
+        if (Time.time < lastNoWeaponMessageTime + noWeaponMessageCooldown)
+            return;
+
+        lastNoWeaponMessageTime = Time.time;
+
+        GameAudioManager.Instance?.PlaySFX(noWeaponSound, emptyGunVolume);
+
+        InteractionPromptUI.Instance?.Show("No tienes una pistola equipada.");
+        Invoke(nameof(HidePrompt), 1.2f);
+    }
+
     private void SetAiming(bool aiming)
     {
         isAiming = aiming;
@@ -391,6 +407,9 @@ public class PlayerWeaponController : MonoBehaviour
 
     private bool IsGameplayPaused()
     {
+        if (GameOverUI.Instance != null && GameOverUI.Instance.IsGameOver)
+            return true;
+
         if (NoteUI.Instance != null && NoteUI.Instance.IsOpen)
             return true;
 

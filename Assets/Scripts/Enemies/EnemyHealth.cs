@@ -12,6 +12,13 @@ public class EnemyHealth : MonoBehaviour
     [SerializeField] private float hitVolume = 0.8f;
     [SerializeField] private float deathVolume = 1f;
 
+    [Header("Drop al morir")]
+    [SerializeField] private GameObject dropPrefab;
+    [SerializeField] private bool alwaysDrop = true;
+    [Range(0f, 1f)]
+    [SerializeField] private float dropChance = 0.5f;
+    [SerializeField] private Vector3 dropOffset = new Vector3(0f, -0.75f, 0f);
+
     [Header("Muerte")]
     [SerializeField] private bool destroyOnDeath = true;
     [SerializeField] private float destroyDelay = 0.6f;
@@ -76,6 +83,8 @@ public class EnemyHealth : MonoBehaviour
 
         Debug.Log(gameObject.name + " murió.");
 
+        DropItem();
+
         if (hitReaction != null)
         {
             hitReaction.StopReaction();
@@ -109,5 +118,32 @@ public class EnemyHealth : MonoBehaviour
         {
             Destroy(gameObject, destroyDelay);
         }
+    }
+
+    private void DropItem()
+    {
+        if (dropPrefab == null)
+            return;
+
+        if (!alwaysDrop)
+        {
+            float randomValue = Random.Range(0f, 1f);
+
+            if (randomValue > dropChance)
+            {
+                Debug.Log(gameObject.name + " no soltó objeto.");
+                return;
+            }
+        }
+
+        Vector3 dropPosition = transform.position + dropOffset;
+
+        GameObject spawnedDrop = Instantiate(
+            dropPrefab,
+            dropPosition,
+            Quaternion.identity
+        );
+
+        Debug.Log(gameObject.name + " soltó: " + spawnedDrop.name);
     }
 }

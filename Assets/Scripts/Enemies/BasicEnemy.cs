@@ -9,6 +9,7 @@ public class BasicEnemy : MonoBehaviour
         Patrol,
         Chase,
         Attack,
+        Investigate,
         ReturnToPatrol
     }
 
@@ -34,6 +35,12 @@ public class BasicEnemy : MonoBehaviour
     [SerializeField] private float eyeHeight = 1.3f;
     [SerializeField] private float playerTargetHeight = 1.1f;
     [SerializeField] private float loseSightGraceTime = 1.5f;
+
+    [Header("Audición")]
+    [SerializeField] private bool canHearNoises = true;
+    [SerializeField] private float hearingMultiplier = 1f;
+    [SerializeField] private float investigateReachDistance = 0.5f;
+    [SerializeField] private float investigateWaitTime = 1.2f;
 
     [Header("Ataque")]
     [SerializeField] private int damage = 15;
@@ -65,16 +72,19 @@ public class BasicEnemy : MonoBehaviour
 
     private Vector3 homePosition;
     private Vector3 lastKnownPlayerPosition;
+    private Vector3 investigationPosition;
 
     private float verticalVelocity;
     private float lastAttackTime;
     private float lastTimePlayerSeen;
 
     private bool isWaitingAtPatrolPoint;
+    private bool isWaitingAtInvestigationPoint;
 
     private int currentPatrolIndex;
     private Coroutine attackRoutine;
     private Coroutine patrolWaitRoutine;
+    private Coroutine investigationWaitRoutine;
 
     private Collider[] enemyColliders;
     private Collider[] playerColliders;
@@ -84,8 +94,40 @@ public class BasicEnemy : MonoBehaviour
         characterController = GetComponent<CharacterController>();
         homePosition = transform.position;
         lastKnownPlayerPosition = homePosition;
+        investigationPosition = homePosition;
 
         enemyColliders = GetComponentsInChildren<Collider>();
+    }
+
+    private void OnEnable()
+    {
+        NoiseSystem.OnNoiseEmitted += HearNoise;
+    }
+
+    private void OnDisable()
+    {
+        NoiseSystem.OnNoiseEmitted -= HearNoise;
+
+        if (attackRoutine != null)
+        {
+            StopCoroutine(attackRoutine);
+            attackRoutine = null;
+        }
+
+        if (patrolWaitRoutine != null)
+        {
+            StopCoroutine(patrolWaitRoutine);
+            patrolWaitRoutine = null;
+        }
+
+        if (investigationWaitRoutine != null)
+        {
+            StopCoroutine(investigationWaitRoutine);
+            investigationWaitRoutine = null;
+        }
+
+        isWaitingAtPatrolPoint = false;
+        isWaitingAtInvestigationPoint = false;
     }
 
     private void Start()
@@ -168,10 +210,42 @@ public class BasicEnemy : MonoBehaviour
                 ApplyGravity();
                 break;
 
+            case EnemyState.Investigate:
+                InvestigateNoise();
+                break;
+
             case EnemyState.ReturnToPatrol:
                 ReturnToPatrolArea();
                 break;
         }
+    }
+
+    private void HearNoise(Vector3 noisePosition, float noiseRange)
+    {
+        if (!canHearNoises)
+            return;
+
+        if (playerHealth != null && playerHealth.IsDead)
+            return;
+
+        if (currentState == EnemyState.Attack)
+            return;
+
+        float distanceToNoise = Vector3.Distance(transform.position, noisePosition);
+        float finalHearingRange = noiseRange * hearingMultiplier;
+
+        if (distanceToNoise > finalHearingRange)
+            return;
+
+        investigationPosition = noisePosition;
+        lastKnownPlayerPosition = noisePosition;
+
+        StopPatrolWait();
+        StopInvestigationWait();
+
+        currentState = EnemyState.Investigate;
+
+        Debug.Log(gameObject.name + " escuchó un ruido e irá a investigar.");
     }
 
     private bool CanSeePlayer(float distanceToPlayer)
@@ -315,10 +389,7 @@ public class BasicEnemy : MonoBehaviour
 
         MoveTowardsPosition(targetPoint.position, patrolSpeed);
 
-        float distanceToPoint = Vector3.Distance(
-            new Vector3(transform.position.x, 0f, transform.position.z),
-            new Vector3(targetPoint.position.x, 0f, targetPoint.position.z)
-        );
+        float distanceToPoint = GetFlatDistance(transform.position, targetPoint.position);
 
         if (distanceToPoint <= patrolPointReachDistance)
         {
@@ -348,6 +419,17 @@ public class BasicEnemy : MonoBehaviour
         patrolWaitRoutine = null;
     }
 
+    private void StopPatrolWait()
+    {
+        if (patrolWaitRoutine != null)
+        {
+            StopCoroutine(patrolWaitRoutine);
+            patrolWaitRoutine = null;
+        }
+
+        isWaitingAtPatrolPoint = false;
+    }
+
     private void GoToNextPatrolPoint()
     {
         if (patrolPoints == null || patrolPoints.Length <= 0)
@@ -371,16 +453,64 @@ public class BasicEnemy : MonoBehaviour
 
         MoveTowardsPosition(lastKnownPlayerPosition, moveSpeed);
 
-        float distanceToLastKnown = Vector3.Distance(
-            new Vector3(transform.position.x, 0f, transform.position.z),
-            new Vector3(lastKnownPlayerPosition.x, 0f, lastKnownPlayerPosition.z)
-        );
+        float distanceToLastKnown = GetFlatDistance(transform.position, lastKnownPlayerPosition);
 
         if (distanceToLastKnown <= patrolPointReachDistance &&
             Time.time > lastTimePlayerSeen + loseSightGraceTime)
         {
             currentState = EnemyState.ReturnToPatrol;
         }
+    }
+
+    private void InvestigateNoise()
+    {
+        if (isWaitingAtInvestigationPoint)
+        {
+            ApplyGravity();
+            return;
+        }
+
+        MoveTowardsPosition(investigationPosition, patrolSpeed);
+
+        float distanceToNoise = GetFlatDistance(transform.position, investigationPosition);
+
+        if (distanceToNoise <= investigateReachDistance)
+        {
+            StartInvestigationWait();
+        }
+    }
+
+    private void StartInvestigationWait()
+    {
+        if (investigationWaitRoutine != null)
+        {
+            StopCoroutine(investigationWaitRoutine);
+        }
+
+        investigationWaitRoutine = StartCoroutine(InvestigationWaitRoutine());
+    }
+
+    private IEnumerator InvestigationWaitRoutine()
+    {
+        isWaitingAtInvestigationPoint = true;
+
+        yield return new WaitForSeconds(investigateWaitTime);
+
+        isWaitingAtInvestigationPoint = false;
+        investigationWaitRoutine = null;
+
+        currentState = EnemyState.ReturnToPatrol;
+    }
+
+    private void StopInvestigationWait()
+    {
+        if (investigationWaitRoutine != null)
+        {
+            StopCoroutine(investigationWaitRoutine);
+            investigationWaitRoutine = null;
+        }
+
+        isWaitingAtInvestigationPoint = false;
     }
 
     private void ReturnToPatrolArea()
@@ -394,10 +524,7 @@ public class BasicEnemy : MonoBehaviour
 
         MoveTowardsPosition(targetPosition, patrolSpeed);
 
-        float distanceToHome = Vector3.Distance(
-            new Vector3(transform.position.x, 0f, transform.position.z),
-            new Vector3(targetPosition.x, 0f, targetPosition.z)
-        );
+        float distanceToHome = GetFlatDistance(transform.position, targetPosition);
 
         if (distanceToHome <= patrolPointReachDistance)
         {
@@ -560,6 +687,14 @@ public class BasicEnemy : MonoBehaviour
         characterController.Move(movement * Time.deltaTime);
     }
 
+    private float GetFlatDistance(Vector3 a, Vector3 b)
+    {
+        a.y = 0f;
+        b.y = 0f;
+
+        return Vector3.Distance(a, b);
+    }
+
     private bool IsGameplayPaused()
     {
         if (GameOverUI.Instance != null && GameOverUI.Instance.IsGameOver)
@@ -575,23 +710,6 @@ public class BasicEnemy : MonoBehaviour
             return true;
 
         return false;
-    }
-
-    private void OnDisable()
-    {
-        if (attackRoutine != null)
-        {
-            StopCoroutine(attackRoutine);
-            attackRoutine = null;
-        }
-
-        if (patrolWaitRoutine != null)
-        {
-            StopCoroutine(patrolWaitRoutine);
-            patrolWaitRoutine = null;
-        }
-
-        isWaitingAtPatrolPoint = false;
     }
 
     private void OnDrawGizmosSelected()
@@ -610,6 +728,8 @@ public class BasicEnemy : MonoBehaviour
 
         Gizmos.DrawRay(eyePosition, leftDirection * detectionRange);
         Gizmos.DrawRay(eyePosition, rightDirection * detectionRange);
+
+        Gizmos.DrawWireSphere(investigationPosition, investigateReachDistance);
 
         if (patrolPoints == null)
             return;
