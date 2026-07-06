@@ -407,7 +407,13 @@ public class PlayerWeaponController : MonoBehaviour
 
     private bool IsGameplayPaused()
     {
+        if (PauseMenuUI.Instance != null && PauseMenuUI.Instance.IsPaused)
+            return true;
+
         if (GameOverUI.Instance != null && GameOverUI.Instance.IsGameOver)
+            return true;
+
+        if (EndingUI.Instance != null && EndingUI.Instance.EndingActive)
             return true;
 
         if (NoteUI.Instance != null && NoteUI.Instance.IsOpen)

@@ -22,6 +22,9 @@ public class PlayerTankController : MonoBehaviour
 
     private void Update()
     {
+        if (PauseMenuUI.Instance != null && PauseMenuUI.Instance.IsPaused)
+            return;
+
         MovePlayer();
     }
 

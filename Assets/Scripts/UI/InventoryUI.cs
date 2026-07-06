@@ -50,7 +50,13 @@ public class InventoryUI : MonoBehaviour
 
     private void Update()
     {
+        if (PauseMenuUI.Instance != null && PauseMenuUI.Instance.IsPaused)
+            return;
+
         if (GameOverUI.Instance != null && GameOverUI.Instance.IsGameOver)
+            return;
+
+        if (EndingUI.Instance != null && EndingUI.Instance.EndingActive)
             return;
 
         if (NoteUI.Instance != null && NoteUI.Instance.IsOpen)

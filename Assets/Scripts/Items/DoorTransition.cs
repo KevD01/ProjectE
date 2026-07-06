@@ -58,6 +58,12 @@ public class DoorTransition : MonoBehaviour
 
     private void Update()
     {
+        if (PauseMenuUI.Instance != null && PauseMenuUI.Instance.IsPaused)
+        {
+            HidePromptState();
+            return;
+        }
+
         UpdatePrompt();
 
         if (isTransitioning)
@@ -70,6 +76,12 @@ public class DoorTransition : MonoBehaviour
             return;
 
         if (InventoryUI.Instance != null && InventoryUI.Instance.IsOpen)
+            return;
+
+        if (GameOverUI.Instance != null && GameOverUI.Instance.IsGameOver)
+            return;
+
+        if (EndingUI.Instance != null && EndingUI.Instance.EndingActive)
             return;
 
         if (playerObject == null)
@@ -153,6 +165,9 @@ public class DoorTransition : MonoBehaviour
             playerObject != null &&
             playerInside &&
             IsPlayerCloseEnough() &&
+            (PauseMenuUI.Instance == null || !PauseMenuUI.Instance.IsPaused) &&
+            (GameOverUI.Instance == null || !GameOverUI.Instance.IsGameOver) &&
+            (EndingUI.Instance == null || !EndingUI.Instance.EndingActive) &&
             (NoteUI.Instance == null || !NoteUI.Instance.IsOpen) &&
             (NoteArchiveUI.Instance == null || !NoteArchiveUI.Instance.IsOpen) &&
             (InventoryUI.Instance == null || !InventoryUI.Instance.IsOpen);
@@ -300,6 +315,13 @@ public class DoorTransition : MonoBehaviour
         isTransitioning = false;
     }
 
+    private void HidePromptState()
+    {
+        InteractionPromptUI.Instance?.Hide();
+        promptIsVisible = false;
+        showingTemporaryMessage = false;
+    }
+
     private void OnTriggerEnter(Collider other)
     {
         if (!other.CompareTag("Player"))
@@ -329,8 +351,6 @@ public class DoorTransition : MonoBehaviour
             playerObject = null;
         }
 
-        InteractionPromptUI.Instance?.Hide();
-        promptIsVisible = false;
-        showingTemporaryMessage = false;
+        HidePromptState();
     }
 }
