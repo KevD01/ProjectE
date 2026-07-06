@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4dc95cdf70acfbc48be25e1f566a1df2, type: 3}
+  m_Name: NOTE_04_LabCode
+  m_EditorClassIdentifier: Assembly-CSharp::NoteData
+  noteId: note_04_LabCode
+  noteTitle: 'Registro de laboratorio '
+  noteBody: "D\xEDa 41.\n\nEl sujeto reaccion\xF3 al compuesto despu\xE9s de la cuarta
+    inyecci\xF3n.\n\nEl c\xF3digo de acceso fue cambiado por seguridad.\n\nNueva
+    clave del gabinete de muestras: 2741.\n\nSi alguien encuentra esto, no abra el
+    frasco."
