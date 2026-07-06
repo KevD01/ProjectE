@@ -28,6 +28,13 @@ public class BasicEnemy : MonoBehaviour
     [SerializeField] private float losePlayerRange = 10f;
     [SerializeField] private float attackRange = 1.3f;
 
+    [Header("Visión")]
+    [SerializeField] private bool useLineOfSight = true;
+    [SerializeField] private float fieldOfViewAngle = 120f;
+    [SerializeField] private float eyeHeight = 1.3f;
+    [SerializeField] private float playerTargetHeight = 1.1f;
+    [SerializeField] private float loseSightGraceTime = 1.5f;
+
     [Header("Ataque")]
     [SerializeField] private int damage = 15;
     [SerializeField] private float attackCooldown = 1.5f;
@@ -48,6 +55,7 @@ public class BasicEnemy : MonoBehaviour
 
     [Header("Debug")]
     [SerializeField] private bool showGizmos = true;
+    [SerializeField] private bool showVisionDebugRay = true;
 
     private CharacterController characterController;
     private Transform playerTransform;
@@ -56,18 +64,28 @@ public class BasicEnemy : MonoBehaviour
     private EnemyState currentState = EnemyState.Patrol;
 
     private Vector3 homePosition;
+    private Vector3 lastKnownPlayerPosition;
+
     private float verticalVelocity;
     private float lastAttackTime;
+    private float lastTimePlayerSeen;
+
     private bool isWaitingAtPatrolPoint;
 
     private int currentPatrolIndex;
     private Coroutine attackRoutine;
     private Coroutine patrolWaitRoutine;
 
+    private Collider[] enemyColliders;
+    private Collider[] playerColliders;
+
     private void Awake()
     {
         characterController = GetComponent<CharacterController>();
         homePosition = transform.position;
+        lastKnownPlayerPosition = homePosition;
+
+        enemyColliders = GetComponentsInChildren<Collider>();
     }
 
     private void Start()
@@ -78,6 +96,7 @@ public class BasicEnemy : MonoBehaviour
         {
             playerTransform = player.transform;
             playerHealth = player.GetComponent<PlayerHealth>();
+            playerColliders = player.GetComponentsInChildren<Collider>();
         }
     }
 
@@ -101,23 +120,36 @@ public class BasicEnemy : MonoBehaviour
         }
 
         float distanceToPlayer = Vector3.Distance(transform.position, playerTransform.position);
+        bool canSeePlayer = CanSeePlayer(distanceToPlayer);
+
+        if (canSeePlayer)
+        {
+            lastKnownPlayerPosition = playerTransform.position;
+            lastTimePlayerSeen = Time.time;
+        }
 
         if (currentState != EnemyState.Attack)
         {
-            if (distanceToPlayer <= attackRange)
+            if (distanceToPlayer <= attackRange && canSeePlayer)
             {
                 currentState = EnemyState.Attack;
                 TryAttack();
                 return;
             }
 
-            if (distanceToPlayer <= detectionRange)
+            if (canSeePlayer)
             {
                 currentState = EnemyState.Chase;
             }
-            else if (distanceToPlayer > losePlayerRange && currentState == EnemyState.Chase)
+            else if (currentState == EnemyState.Chase)
             {
-                currentState = EnemyState.ReturnToPatrol;
+                bool tooFar = distanceToPlayer > losePlayerRange;
+                bool lostSightTooLong = Time.time > lastTimePlayerSeen + loseSightGraceTime;
+
+                if (tooFar || lostSightTooLong)
+                {
+                    currentState = EnemyState.ReturnToPatrol;
+                }
             }
         }
 
@@ -140,6 +172,123 @@ public class BasicEnemy : MonoBehaviour
                 ReturnToPatrolArea();
                 break;
         }
+    }
+
+    private bool CanSeePlayer(float distanceToPlayer)
+    {
+        if (distanceToPlayer > detectionRange)
+            return false;
+
+        Vector3 enemyEyePosition = transform.position + Vector3.up * eyeHeight;
+        Vector3 playerTargetPosition = playerTransform.position + Vector3.up * playerTargetHeight;
+
+        Vector3 directionToPlayer = playerTargetPosition - enemyEyePosition;
+        Vector3 flatDirectionToPlayer = directionToPlayer;
+        flatDirectionToPlayer.y = 0f;
+
+        if (flatDirectionToPlayer.sqrMagnitude <= 0.01f)
+            return true;
+
+        float angleToPlayer = Vector3.Angle(transform.forward, flatDirectionToPlayer.normalized);
+
+        if (angleToPlayer > fieldOfViewAngle * 0.5f)
+        {
+            if (showVisionDebugRay)
+            {
+                Debug.DrawLine(enemyEyePosition, playerTargetPosition, Color.yellow);
+            }
+
+            return false;
+        }
+
+        if (!useLineOfSight)
+        {
+            if (showVisionDebugRay)
+            {
+                Debug.DrawLine(enemyEyePosition, playerTargetPosition, Color.green);
+            }
+
+            return true;
+        }
+
+        bool hasClearSight = HasClearLineOfSight(enemyEyePosition, playerTargetPosition);
+
+        if (showVisionDebugRay)
+        {
+            Debug.DrawLine(
+                enemyEyePosition,
+                playerTargetPosition,
+                hasClearSight ? Color.green : Color.red
+            );
+        }
+
+        return hasClearSight;
+    }
+
+    private bool HasClearLineOfSight(Vector3 startPosition, Vector3 targetPosition)
+    {
+        Vector3 direction = targetPosition - startPosition;
+        float distance = direction.magnitude;
+
+        if (distance <= 0.01f)
+            return true;
+
+        RaycastHit[] hits = Physics.RaycastAll(
+            startPosition,
+            direction.normalized,
+            distance,
+            ~0,
+            QueryTriggerInteraction.Ignore
+        );
+
+        if (hits.Length <= 0)
+            return true;
+
+        System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
+
+        foreach (RaycastHit hit in hits)
+        {
+            if (hit.collider == null)
+                continue;
+
+            if (IsEnemyCollider(hit.collider))
+                continue;
+
+            if (IsPlayerCollider(hit.collider))
+                return true;
+
+            return false;
+        }
+
+        return true;
+    }
+
+    private bool IsEnemyCollider(Collider colliderToCheck)
+    {
+        if (enemyColliders == null)
+            return false;
+
+        foreach (Collider enemyCollider in enemyColliders)
+        {
+            if (enemyCollider == colliderToCheck)
+                return true;
+        }
+
+        return false;
+    }
+
+    private bool IsPlayerCollider(Collider colliderToCheck)
+    {
+        if (playerColliders == null)
+            return false;
+
+        foreach (Collider playerCollider in playerColliders)
+        {
+            if (playerCollider == colliderToCheck)
+                return true;
+        }
+
+        return false;
     }
 
     private void Patrol()
@@ -220,7 +369,18 @@ public class BasicEnemy : MonoBehaviour
             return;
         }
 
-        MoveTowardsPosition(playerTransform.position, moveSpeed);
+        MoveTowardsPosition(lastKnownPlayerPosition, moveSpeed);
+
+        float distanceToLastKnown = Vector3.Distance(
+            new Vector3(transform.position.x, 0f, transform.position.z),
+            new Vector3(lastKnownPlayerPosition.x, 0f, lastKnownPlayerPosition.z)
+        );
+
+        if (distanceToLastKnown <= patrolPointReachDistance &&
+            Time.time > lastTimePlayerSeen + loseSightGraceTime)
+        {
+            currentState = EnemyState.ReturnToPatrol;
+        }
     }
 
     private void ReturnToPatrolArea()
@@ -442,6 +602,14 @@ public class BasicEnemy : MonoBehaviour
         Gizmos.DrawWireSphere(transform.position, detectionRange);
         Gizmos.DrawWireSphere(transform.position, losePlayerRange);
         Gizmos.DrawWireSphere(transform.position, attackRange);
+
+        Vector3 eyePosition = transform.position + Vector3.up * eyeHeight;
+
+        Vector3 leftDirection = Quaternion.Euler(0f, -fieldOfViewAngle * 0.5f, 0f) * transform.forward;
+        Vector3 rightDirection = Quaternion.Euler(0f, fieldOfViewAngle * 0.5f, 0f) * transform.forward;
+
+        Gizmos.DrawRay(eyePosition, leftDirection * detectionRange);
+        Gizmos.DrawRay(eyePosition, rightDirection * detectionRange);
 
         if (patrolPoints == null)
             return;

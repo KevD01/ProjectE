@@ -11501,9 +11501,14 @@ MonoBehaviour:
   - {fileID: 912510544}
   patrolPointReachDistance: 0.4
   waitAtPatrolPointTime: 1
-  detectionRange: 5
+  detectionRange: 7
   losePlayerRange: 8
   attackRange: 1.3
+  useLineOfSight: 1
+  fieldOfViewAngle: 120
+  eyeHeight: 1.3
+  playerTargetHeight: 1.1
+  loseSightGraceTime: 1.5
   damage: 15
   attackCooldown: 1.5
   attackWindUpTime: 0.45
@@ -11515,6 +11520,7 @@ MonoBehaviour:
   attackVolume: 0.8
   attackHitVolume: 0.8
   showGizmos: 1
+  showVisionDebugRay: 1
 --- !u!143 &1579394194
 CharacterController:
   m_ObjectHideFlags: 0
