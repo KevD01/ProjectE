@@ -131,6 +131,8 @@ MonoBehaviour:
   interactionDistance: 1.8
   interactionMessage: Presiona E para recoger
   pickupDescription: Hay unas pocas balas manchadas en el suelo.
+  showDescriptionBeforePickup: 1
+  pickupCollectedMessage: 'Recogiste: Balas de pistola'
   pickupMessageTime: 1.2
   pickupSound: {fileID: 8300000, guid: f126af8ff5fe19a4a814bead7d9c8dc5, type: 3}
   pickupVolume: 0.8

@@ -10,11 +10,8 @@ public class ItemPickup : MonoBehaviour
     [Header("Interacción")]
     [SerializeField] private KeyCode interactKey = KeyCode.E;
     [SerializeField] private float interactionDistance = 2.2f;
-    [SerializeField] private string interactionMessage = "Presiona E para recoger";
 
-    [Header("Descripción")]
-    [TextArea(2, 4)]
-    [SerializeField] private string pickupDescription = "Has recogido un objeto.";
+    [Header("Mensaje al recoger")]
     [SerializeField] private float pickupMessageTime = 1.3f;
 
     [Header("Audio")]
@@ -34,6 +31,8 @@ public class ItemPickup : MonoBehaviour
 
     [Header("Debug")]
     [SerializeField] private bool showDebug = true;
+
+    private const string interactionMessage = "Oprime E para recoger";
 
     private GameObject playerObject;
     private bool isPickedUp;
@@ -101,7 +100,7 @@ public class ItemPickup : MonoBehaviour
         if (promptIsVisible)
             return;
 
-        InteractionPromptUI.Instance?.Show(interactionMessage);
+        InteractionPromptUI.Instance?.Show(BuildBeforePickupMessage());
         promptIsVisible = true;
     }
 
@@ -112,6 +111,23 @@ public class ItemPickup : MonoBehaviour
 
         InteractionPromptUI.Instance?.Hide();
         promptIsVisible = false;
+    }
+
+    private string BuildBeforePickupMessage()
+    {
+        string description = "";
+
+        if (itemData != null)
+        {
+            description = itemData.itemDescription;
+        }
+
+        if (string.IsNullOrWhiteSpace(description))
+        {
+            description = "Hay un objeto aquí.";
+        }
+
+        return description + "\n\n" + interactionMessage;
     }
 
     private void TryPickup()
@@ -142,7 +158,7 @@ public class ItemPickup : MonoBehaviour
 
         GameAudioManager.Instance?.PlaySFXNoPitch(pickupSound, pickupVolume);
 
-        InteractionPromptUI.Instance?.Show(BuildPickupMessage());
+        InteractionPromptUI.Instance?.Show(BuildCollectedMessage());
 
         yield return new WaitForSeconds(pickupMessageTime);
 
@@ -159,24 +175,19 @@ public class ItemPickup : MonoBehaviour
         Destroy(gameObject);
     }
 
-    private string BuildPickupMessage()
+    private string BuildCollectedMessage()
     {
-        if (!string.IsNullOrWhiteSpace(pickupDescription))
+        if (itemData == null)
         {
-            return pickupDescription;
+            return "Recogiste un objeto.";
         }
 
-        if (itemData != null)
+        if (amount > 1)
         {
-            if (amount > 1)
-            {
-                return "Recogiste: " + itemData.itemName + " x" + amount;
-            }
-
-            return "Recogiste: " + itemData.itemName;
+            return "Recogiste: " + itemData.itemName + " x" + amount;
         }
 
-        return "Has recogido un objeto.";
+        return "Recogiste: " + itemData.itemName;
     }
 
     private void RunPickupEvents()
