@@ -1,20 +1,50 @@
+using System.Collections;
 using UnityEngine;
 
 [RequireComponent(typeof(CharacterController))]
 public class BasicEnemy : MonoBehaviour
 {
+    private enum EnemyState
+    {
+        Patrol,
+        Chase,
+        Attack,
+        ReturnToPatrol
+    }
+
     [Header("Movimiento")]
     [SerializeField] private float moveSpeed = 1.2f;
+    [SerializeField] private float patrolSpeed = 0.8f;
     [SerializeField] private float rotationSpeed = 6f;
     [SerializeField] private float gravity = -20f;
 
+    [Header("Patrulla")]
+    [SerializeField] private Transform[] patrolPoints;
+    [SerializeField] private float patrolPointReachDistance = 0.4f;
+    [SerializeField] private float waitAtPatrolPointTime = 1f;
+
     [Header("Detección")]
     [SerializeField] private float detectionRange = 7f;
+    [SerializeField] private float losePlayerRange = 10f;
     [SerializeField] private float attackRange = 1.3f;
 
     [Header("Ataque")]
     [SerializeField] private int damage = 15;
     [SerializeField] private float attackCooldown = 1.5f;
+
+    [Header("Ataque - Timing")]
+    [SerializeField] private float attackWindUpTime = 0.35f;
+    [SerializeField] private float attackHitTime = 0.12f;
+    [SerializeField] private float attackRecoveryTime = 0.45f;
+
+    [Header("Ataque - Movimiento")]
+    [SerializeField] private float attackLungeDistance = 0.45f;
+
+    [Header("Audio")]
+    [SerializeField] private AudioClip attackSound;
+    [SerializeField] private AudioClip attackHitSound;
+    [SerializeField] private float attackVolume = 0.8f;
+    [SerializeField] private float attackHitVolume = 0.8f;
 
     [Header("Debug")]
     [SerializeField] private bool showGizmos = true;
@@ -23,12 +53,21 @@ public class BasicEnemy : MonoBehaviour
     private Transform playerTransform;
     private PlayerHealth playerHealth;
 
+    private EnemyState currentState = EnemyState.Patrol;
+
+    private Vector3 homePosition;
     private float verticalVelocity;
     private float lastAttackTime;
+    private bool isWaitingAtPatrolPoint;
+
+    private int currentPatrolIndex;
+    private Coroutine attackRoutine;
+    private Coroutine patrolWaitRoutine;
 
     private void Awake()
     {
         characterController = GetComponent<CharacterController>();
+        homePosition = transform.position;
     }
 
     private void Start()
@@ -50,10 +89,10 @@ public class BasicEnemy : MonoBehaviour
         if (playerTransform == null)
             return;
 
-        HandleEnemyBehavior();
+        HandleState();
     }
 
-    private void HandleEnemyBehavior()
+    private void HandleState()
     {
         if (playerHealth != null && playerHealth.IsDead)
         {
@@ -63,32 +102,161 @@ public class BasicEnemy : MonoBehaviour
 
         float distanceToPlayer = Vector3.Distance(transform.position, playerTransform.position);
 
-        if (distanceToPlayer <= attackRange)
+        if (currentState != EnemyState.Attack)
         {
-            RotateTowardsPlayer();
-            ApplyGravity();
-            TryAttack();
-            return;
+            if (distanceToPlayer <= attackRange)
+            {
+                currentState = EnemyState.Attack;
+                TryAttack();
+                return;
+            }
+
+            if (distanceToPlayer <= detectionRange)
+            {
+                currentState = EnemyState.Chase;
+            }
+            else if (distanceToPlayer > losePlayerRange && currentState == EnemyState.Chase)
+            {
+                currentState = EnemyState.ReturnToPatrol;
+            }
         }
 
-        if (distanceToPlayer <= detectionRange)
+        switch (currentState)
         {
-            ChasePlayer();
-            return;
-        }
+            case EnemyState.Patrol:
+                Patrol();
+                break;
 
-        ApplyGravity();
+            case EnemyState.Chase:
+                ChasePlayer(distanceToPlayer);
+                break;
+
+            case EnemyState.Attack:
+                RotateTowardsPlayer();
+                ApplyGravity();
+                break;
+
+            case EnemyState.ReturnToPatrol:
+                ReturnToPatrolArea();
+                break;
+        }
     }
 
-    private void ChasePlayer()
+    private void Patrol()
     {
-        Vector3 directionToPlayer = playerTransform.position - transform.position;
-        directionToPlayer.y = 0f;
+        if (patrolPoints == null || patrolPoints.Length <= 0)
+        {
+            ApplyGravity();
+            return;
+        }
 
-        if (directionToPlayer.sqrMagnitude <= 0.01f)
+        if (isWaitingAtPatrolPoint)
+        {
+            ApplyGravity();
+            return;
+        }
+
+        Transform targetPoint = patrolPoints[currentPatrolIndex];
+
+        if (targetPoint == null)
+        {
+            GoToNextPatrolPoint();
+            return;
+        }
+
+        MoveTowardsPosition(targetPoint.position, patrolSpeed);
+
+        float distanceToPoint = Vector3.Distance(
+            new Vector3(transform.position.x, 0f, transform.position.z),
+            new Vector3(targetPoint.position.x, 0f, targetPoint.position.z)
+        );
+
+        if (distanceToPoint <= patrolPointReachDistance)
+        {
+            StartPatrolWait();
+        }
+    }
+
+    private void StartPatrolWait()
+    {
+        if (patrolWaitRoutine != null)
+        {
+            StopCoroutine(patrolWaitRoutine);
+        }
+
+        patrolWaitRoutine = StartCoroutine(PatrolWaitRoutine());
+    }
+
+    private IEnumerator PatrolWaitRoutine()
+    {
+        isWaitingAtPatrolPoint = true;
+
+        yield return new WaitForSeconds(waitAtPatrolPointTime);
+
+        GoToNextPatrolPoint();
+
+        isWaitingAtPatrolPoint = false;
+        patrolWaitRoutine = null;
+    }
+
+    private void GoToNextPatrolPoint()
+    {
+        if (patrolPoints == null || patrolPoints.Length <= 0)
             return;
 
-        Vector3 moveDirection = directionToPlayer.normalized;
+        currentPatrolIndex++;
+
+        if (currentPatrolIndex >= patrolPoints.Length)
+        {
+            currentPatrolIndex = 0;
+        }
+    }
+
+    private void ChasePlayer(float distanceToPlayer)
+    {
+        if (distanceToPlayer > losePlayerRange)
+        {
+            currentState = EnemyState.ReturnToPatrol;
+            return;
+        }
+
+        MoveTowardsPosition(playerTransform.position, moveSpeed);
+    }
+
+    private void ReturnToPatrolArea()
+    {
+        Vector3 targetPosition = homePosition;
+
+        if (patrolPoints != null && patrolPoints.Length > 0 && patrolPoints[0] != null)
+        {
+            targetPosition = patrolPoints[0].position;
+        }
+
+        MoveTowardsPosition(targetPosition, patrolSpeed);
+
+        float distanceToHome = Vector3.Distance(
+            new Vector3(transform.position.x, 0f, transform.position.z),
+            new Vector3(targetPosition.x, 0f, targetPosition.z)
+        );
+
+        if (distanceToHome <= patrolPointReachDistance)
+        {
+            currentState = EnemyState.Patrol;
+        }
+    }
+
+    private void MoveTowardsPosition(Vector3 targetPosition, float speed)
+    {
+        Vector3 direction = targetPosition - transform.position;
+        direction.y = 0f;
+
+        if (direction.sqrMagnitude <= 0.01f)
+        {
+            ApplyGravity();
+            return;
+        }
+
+        Vector3 moveDirection = direction.normalized;
 
         RotateTowardsDirection(moveDirection);
 
@@ -99,7 +267,7 @@ public class BasicEnemy : MonoBehaviour
 
         verticalVelocity += gravity * Time.deltaTime;
 
-        Vector3 movement = moveDirection * moveSpeed;
+        Vector3 movement = moveDirection * speed;
         movement.y = verticalVelocity;
 
         characterController.Move(movement * Time.deltaTime);
@@ -107,23 +275,95 @@ public class BasicEnemy : MonoBehaviour
 
     private void TryAttack()
     {
+        if (attackRoutine != null)
+            return;
+
         if (playerHealth != null && playerHealth.IsDead)
             return;
 
         if (Time.time < lastAttackTime + attackCooldown)
+        {
+            currentState = EnemyState.Chase;
             return;
+        }
 
         lastAttackTime = Time.time;
+        attackRoutine = StartCoroutine(AttackRoutine());
+    }
 
-        if (playerHealth != null)
+    private IEnumerator AttackRoutine()
+    {
+        currentState = EnemyState.Attack;
+
+        RotateTowardsPlayer();
+
+        GameAudioManager.Instance?.PlaySFXNoPitch(attackSound, attackVolume);
+
+        yield return new WaitForSeconds(attackWindUpTime);
+
+        yield return LungeForwardRoutine();
+
+        yield return new WaitForSeconds(attackHitTime);
+
+        TryApplyAttackDamage();
+
+        yield return new WaitForSeconds(attackRecoveryTime);
+
+        currentState = EnemyState.Chase;
+        attackRoutine = null;
+    }
+
+    private IEnumerator LungeForwardRoutine()
+    {
+        float lungeTime = 0.12f;
+        float timer = 0f;
+
+        Vector3 lungeDirection = transform.forward;
+        lungeDirection.y = 0f;
+        lungeDirection.Normalize();
+
+        while (timer < lungeTime)
         {
-            playerHealth.TakeDamage(damage);
-            Debug.Log("El enemigo atacó al jugador.");
+            timer += Time.deltaTime;
+
+            if (characterController != null && characterController.enabled)
+            {
+                Vector3 movement = lungeDirection * (attackLungeDistance / lungeTime);
+                characterController.Move(movement * Time.deltaTime);
+            }
+
+            yield return null;
         }
+    }
+
+    private void TryApplyAttackDamage()
+    {
+        if (playerTransform == null || playerHealth == null)
+            return;
+
+        if (playerHealth.IsDead)
+            return;
+
+        float distanceToPlayer = Vector3.Distance(transform.position, playerTransform.position);
+
+        if (distanceToPlayer > attackRange + 0.4f)
+        {
+            Debug.Log("El enemigo atacó, pero falló.");
+            return;
+        }
+
+        playerHealth.TakeDamage(damage);
+
+        GameAudioManager.Instance?.PlaySFXNoPitch(attackHitSound, attackHitVolume);
+
+        Debug.Log("El enemigo golpeó al jugador.");
     }
 
     private void RotateTowardsPlayer()
     {
+        if (playerTransform == null)
+            return;
+
         Vector3 directionToPlayer = playerTransform.position - transform.position;
         directionToPlayer.y = 0f;
 
@@ -146,6 +386,9 @@ public class BasicEnemy : MonoBehaviour
 
     private void ApplyGravity()
     {
+        if (characterController == null || !characterController.enabled)
+            return;
+
         if (characterController.isGrounded && verticalVelocity < 0f)
         {
             verticalVelocity = -2f;
@@ -174,12 +417,53 @@ public class BasicEnemy : MonoBehaviour
         return false;
     }
 
+    private void OnDisable()
+    {
+        if (attackRoutine != null)
+        {
+            StopCoroutine(attackRoutine);
+            attackRoutine = null;
+        }
+
+        if (patrolWaitRoutine != null)
+        {
+            StopCoroutine(patrolWaitRoutine);
+            patrolWaitRoutine = null;
+        }
+
+        isWaitingAtPatrolPoint = false;
+    }
+
     private void OnDrawGizmosSelected()
     {
         if (!showGizmos)
             return;
 
         Gizmos.DrawWireSphere(transform.position, detectionRange);
+        Gizmos.DrawWireSphere(transform.position, losePlayerRange);
         Gizmos.DrawWireSphere(transform.position, attackRange);
+
+        if (patrolPoints == null)
+            return;
+
+        for (int i = 0; i < patrolPoints.Length; i++)
+        {
+            if (patrolPoints[i] == null)
+                continue;
+
+            Gizmos.DrawWireSphere(patrolPoints[i].position, patrolPointReachDistance);
+
+            int nextIndex = i + 1;
+
+            if (nextIndex >= patrolPoints.Length)
+            {
+                nextIndex = 0;
+            }
+
+            if (patrolPoints[nextIndex] != null)
+            {
+                Gizmos.DrawLine(patrolPoints[i].position, patrolPoints[nextIndex].position);
+            }
+        }
     }
 }

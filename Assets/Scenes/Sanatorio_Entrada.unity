@@ -3673,6 +3673,8 @@ Transform:
   - {fileID: 2106593952}
   - {fileID: 1915375741}
   - {fileID: 1192940259}
+  - {fileID: 639898422}
+  - {fileID: 912510544}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &559783532
@@ -4385,6 +4387,37 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 345213333}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &639898421
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 639898422}
+  m_Layer: 0
+  m_Name: Enemy_PatrolPoint_A
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &639898422
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 639898421}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 3, y: 1, z: 27}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 553789260}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &667527112
 GameObject:
@@ -6156,6 +6189,37 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 574860368}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &912510543
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 912510544}
+  m_Layer: 0
+  m_Name: Enemy_PatrolPoint_B
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &912510544
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 912510543}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -3, y: 1, z: 27}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 553789260}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &918186478
 GameObject:
@@ -11429,12 +11493,27 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BasicEnemy
   moveSpeed: 1.2
+  patrolSpeed: 0.8
   rotationSpeed: 6
   gravity: -20
+  patrolPoints:
+  - {fileID: 639898422}
+  - {fileID: 912510544}
+  patrolPointReachDistance: 0.4
+  waitAtPatrolPointTime: 1
   detectionRange: 7
+  losePlayerRange: 10
   attackRange: 1.3
   damage: 15
   attackCooldown: 1.5
+  attackWindUpTime: 0.45
+  attackHitTime: 0.12
+  attackRecoveryTime: 0.65
+  attackLungeDistance: 0.45
+  attackSound: {fileID: 8300000, guid: 81fbf098d3a61fe498c96e1ec30643ed, type: 3}
+  attackHitSound: {fileID: 8300000, guid: 2431db97226ad1b4f93c32e9cc9749a2, type: 3}
+  attackVolume: 0.8
+  attackHitVolume: 0.8
   showGizmos: 1
 --- !u!143 &1579394194
 CharacterController:
