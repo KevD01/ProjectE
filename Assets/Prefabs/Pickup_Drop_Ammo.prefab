@@ -127,16 +127,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ItemPickup
   itemData: {fileID: 11400000, guid: f8310ca3100d73b459d7acee12affc3c, type: 2}
   amount: 5
-  showDescriptionOnPrompt: 1
-  pickupDescription: Hay unas pocas balas manchadas en el suelo.
-  useItemDescriptionIfPickupDescriptionIsEmpty: 1
-  pickupSound: {fileID: 0}
-  inventoryFullSound: {fileID: 0}
-  pickupVolume: 0.8
-  inventoryFullVolume: 0.7
-  pickupMessagePrefix: Recogiste
-  pickupMessageTime: 1.2
   interactKey: 101
   interactionDistance: 1.8
   interactionMessage: Presiona E para recoger
-  showInteractionRange: 1
+  pickupDescription: Hay unas pocas balas manchadas en el suelo.
+  pickupMessageTime: 1.2
+  pickupSound: {fileID: 8300000, guid: f126af8ff5fe19a4a814bead7d9c8dc5, type: 3}
+  pickupVolume: 0.8
+  objectsToActivateOnPickup: []
+  objectsToDisableOnPickup: []
+  doorsToUnlockOnPickup: []
+  eventSound: {fileID: 0}
+  eventSoundVolume: 0.9
+  eventMessageAfterPickup: 
+  eventMessageTime: 1.4
+  showDebug: 1

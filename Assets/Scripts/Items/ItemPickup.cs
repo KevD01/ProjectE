@@ -7,141 +7,84 @@ public class ItemPickup : MonoBehaviour
     [SerializeField] private ItemData itemData;
     [SerializeField] private int amount = 1;
 
-    [Header("Descripción al acercarse")]
-    [SerializeField] private bool showDescriptionOnPrompt = true;
+    [Header("Interacción")]
+    [SerializeField] private KeyCode interactKey = KeyCode.E;
+    [SerializeField] private float interactionDistance = 2.2f;
+    [SerializeField] private string interactionMessage = "Presiona E para recoger";
 
+    [Header("Descripción")]
     [TextArea(2, 4)]
-    [SerializeField] private string pickupDescription = "Hay un objeto aquí.";
-
-    [SerializeField] private bool useItemDescriptionIfPickupDescriptionIsEmpty = true;
+    [SerializeField] private string pickupDescription = "Has recogido un objeto.";
+    [SerializeField] private float pickupMessageTime = 1.3f;
 
     [Header("Audio")]
     [SerializeField] private AudioClip pickupSound;
-    [SerializeField] private AudioClip inventoryFullSound;
     [SerializeField] private float pickupVolume = 0.8f;
-    [SerializeField] private float inventoryFullVolume = 0.7f;
 
-    [Header("Mensaje al recoger")]
-    [SerializeField] private string pickupMessagePrefix = "Recogiste";
-    [SerializeField] private float pickupMessageTime = 1.2f;
+    [Header("Eventos al recoger")]
+    [SerializeField] private GameObject[] objectsToActivateOnPickup;
+    [SerializeField] private GameObject[] objectsToDisableOnPickup;
+    [SerializeField] private DoorTransition[] doorsToUnlockOnPickup;
+    [SerializeField] private AudioClip eventSound;
+    [SerializeField] private float eventSoundVolume = 0.9f;
 
-    [Header("Interacción")]
-    [SerializeField] private KeyCode interactKey = KeyCode.E;
-    [SerializeField] private float interactionDistance = 2.3f;
-    [SerializeField] private string interactionMessage = "Presiona E para recoger";
+    [TextArea(2, 4)]
+    [SerializeField] private string eventMessageAfterPickup = "";
+    [SerializeField] private float eventMessageTime = 1.4f;
 
     [Header("Debug")]
-    [SerializeField] private bool showInteractionRange = true;
+    [SerializeField] private bool showDebug = true;
 
     private GameObject playerObject;
-    private bool promptIsVisible;
     private bool isPickedUp;
-    private bool showingTemporaryMessage;
+    private bool promptIsVisible;
 
-    private Coroutine temporaryMessageRoutine;
+    private Renderer[] renderers;
+    private Collider[] colliders;
+
+    private void Awake()
+    {
+        renderers = GetComponentsInChildren<Renderer>();
+        colliders = GetComponentsInChildren<Collider>();
+    }
 
     private void Start()
-    {
-        FindPlayer();
-    }
-
-    private void Update()
-    {
-        if (playerObject == null)
-        {
-            FindPlayer();
-        }
-
-        UpdatePrompt();
-
-        if (isPickedUp)
-            return;
-
-        if (IsGameplayPaused())
-            return;
-
-        if (playerObject == null)
-            return;
-
-        if (!IsPlayerCloseEnough())
-            return;
-
-        if (Input.GetKeyDown(interactKey))
-        {
-            PickUpItem();
-        }
-    }
-
-    private void FindPlayer()
     {
         playerObject = GameObject.FindGameObjectWithTag("Player");
     }
 
-    private void UpdatePrompt()
+    private void Update()
     {
         if (isPickedUp)
             return;
 
-        if (showingTemporaryMessage)
-            return;
-
-        bool shouldShowPrompt =
-            playerObject != null &&
-            IsPlayerCloseEnough() &&
-            !IsGameplayPaused();
-
-        if (shouldShowPrompt)
+        if (IsGameplayPaused())
         {
-            if (!promptIsVisible)
+            HidePrompt();
+            return;
+        }
+
+        if (playerObject == null)
+        {
+            playerObject = GameObject.FindGameObjectWithTag("Player");
+            return;
+        }
+
+        bool playerClose = IsPlayerCloseEnough();
+
+        if (playerClose)
+        {
+            ShowPrompt();
+
+            if (Input.GetKeyDown(interactKey))
             {
-                InteractionPromptUI.Instance?.Show(BuildInteractionPrompt());
-                promptIsVisible = true;
+                TryPickup();
             }
         }
         else
         {
-            if (promptIsVisible)
-            {
-                InteractionPromptUI.Instance?.Hide();
-                promptIsVisible = false;
-            }
+            HidePrompt();
         }
-    }
-
-    private string BuildInteractionPrompt()
-    {
-        string itemName = itemData != null ? itemData.itemName : "objeto";
-
-        if (!showDescriptionOnPrompt)
-        {
-            return interactionMessage + ": " + itemName;
-        }
-
-        string description = GetPickupDescription();
-
-        if (string.IsNullOrWhiteSpace(description))
-        {
-            return interactionMessage + ": " + itemName;
-        }
-
-        return description + "\n" + interactionMessage + ": " + itemName;
-    }
-
-    private string GetPickupDescription()
-    {
-        if (!string.IsNullOrWhiteSpace(pickupDescription))
-        {
-            return pickupDescription;
-        }
-
-        if (useItemDescriptionIfPickupDescriptionIsEmpty &&
-            itemData != null &&
-            !string.IsNullOrWhiteSpace(itemData.itemDescription))
-        {
-            return itemData.itemDescription;
-        }
-
-        return "";
     }
 
     private bool IsPlayerCloseEnough()
@@ -153,28 +96,29 @@ public class ItemPickup : MonoBehaviour
         return distance <= interactionDistance;
     }
 
-    private bool IsGameplayPaused()
+    private void ShowPrompt()
     {
-        if (NoteUI.Instance != null && NoteUI.Instance.IsOpen)
-            return true;
-
-        if (NoteArchiveUI.Instance != null && NoteArchiveUI.Instance.IsOpen)
-            return true;
-
-        if (InventoryUI.Instance != null && InventoryUI.Instance.IsOpen)
-            return true;
-
-        return false;
-    }
-
-    private void PickUpItem()
-    {
-        if (isPickedUp)
+        if (promptIsVisible)
             return;
 
+        InteractionPromptUI.Instance?.Show(interactionMessage);
+        promptIsVisible = true;
+    }
+
+    private void HidePrompt()
+    {
+        if (!promptIsVisible)
+            return;
+
+        InteractionPromptUI.Instance?.Hide();
+        promptIsVisible = false;
+    }
+
+    private void TryPickup()
+    {
         if (itemData == null)
         {
-            Debug.LogWarning("Este pickup no tiene ItemData asignado.");
+            Debug.LogWarning(gameObject.name + " no tiene ItemData asignado.");
             return;
         }
 
@@ -184,14 +128,7 @@ public class ItemPickup : MonoBehaviour
             return;
         }
 
-        bool added = PlayerInventory.Instance.AddItem(itemData, amount);
-
-        if (!added)
-        {
-            GameAudioManager.Instance?.PlaySFXNoPitch(inventoryFullSound, inventoryFullVolume);
-            ShowTemporaryMessage("Inventario lleno.");
-            return;
-        }
+        PlayerInventory.Instance.AddItem(itemData, amount);
 
         StartCoroutine(PickupRoutine());
     }
@@ -205,10 +142,17 @@ public class ItemPickup : MonoBehaviour
 
         GameAudioManager.Instance?.PlaySFXNoPitch(pickupSound, pickupVolume);
 
-        string message = BuildPickupMessage();
-        InteractionPromptUI.Instance?.Show(message);
+        InteractionPromptUI.Instance?.Show(BuildPickupMessage());
 
         yield return new WaitForSeconds(pickupMessageTime);
+
+        RunPickupEvents();
+
+        if (!string.IsNullOrWhiteSpace(eventMessageAfterPickup))
+        {
+            InteractionPromptUI.Instance?.Show(eventMessageAfterPickup);
+            yield return new WaitForSeconds(eventMessageTime);
+        }
 
         InteractionPromptUI.Instance?.Hide();
 
@@ -217,63 +161,128 @@ public class ItemPickup : MonoBehaviour
 
     private string BuildPickupMessage()
     {
-        if (itemData == null)
-            return pickupMessagePrefix + ": objeto";
-
-        if (amount > 1)
+        if (!string.IsNullOrWhiteSpace(pickupDescription))
         {
-            return pickupMessagePrefix + ": " + itemData.itemName + " x" + amount;
+            return pickupDescription;
         }
 
-        return pickupMessagePrefix + ": " + itemData.itemName;
+        if (itemData != null)
+        {
+            if (amount > 1)
+            {
+                return "Recogiste: " + itemData.itemName + " x" + amount;
+            }
+
+            return "Recogiste: " + itemData.itemName;
+        }
+
+        return "Has recogido un objeto.";
+    }
+
+    private void RunPickupEvents()
+    {
+        ActivateObjects();
+        DisableObjects();
+        UnlockDoors();
+        PlayEventSound();
+
+        if (showDebug)
+        {
+            Debug.Log(gameObject.name + " ejecutó eventos al recoger.");
+        }
+    }
+
+    private void ActivateObjects()
+    {
+        if (objectsToActivateOnPickup == null)
+            return;
+
+        foreach (GameObject objectToActivate in objectsToActivateOnPickup)
+        {
+            if (objectToActivate != null)
+            {
+                objectToActivate.SetActive(true);
+            }
+        }
+    }
+
+    private void DisableObjects()
+    {
+        if (objectsToDisableOnPickup == null)
+            return;
+
+        foreach (GameObject objectToDisable in objectsToDisableOnPickup)
+        {
+            if (objectToDisable != null)
+            {
+                objectToDisable.SetActive(false);
+            }
+        }
+    }
+
+    private void UnlockDoors()
+    {
+        if (doorsToUnlockOnPickup == null)
+            return;
+
+        foreach (DoorTransition door in doorsToUnlockOnPickup)
+        {
+            if (door != null)
+            {
+                door.UnlockFromPuzzle();
+            }
+        }
+    }
+
+    private void PlayEventSound()
+    {
+        GameAudioManager.Instance?.PlaySFXNoPitch(eventSound, eventSoundVolume);
     }
 
     private void DisableVisualAndColliders()
     {
-        Collider[] colliders = GetComponentsInChildren<Collider>();
-
-        foreach (Collider col in colliders)
+        if (renderers != null)
         {
-            col.enabled = false;
+            foreach (Renderer rend in renderers)
+            {
+                if (rend != null)
+                {
+                    rend.enabled = false;
+                }
+            }
         }
 
-        Renderer[] renderers = GetComponentsInChildren<Renderer>();
-
-        foreach (Renderer rend in renderers)
+        if (colliders != null)
         {
-            rend.enabled = false;
+            foreach (Collider col in colliders)
+            {
+                if (col != null)
+                {
+                    col.enabled = false;
+                }
+            }
         }
     }
 
-    private void ShowTemporaryMessage(string message)
+    private bool IsGameplayPaused()
     {
-        if (temporaryMessageRoutine != null)
-        {
-            StopCoroutine(temporaryMessageRoutine);
-        }
+        if (GameOverUI.Instance != null && GameOverUI.Instance.IsGameOver)
+            return true;
 
-        temporaryMessageRoutine = StartCoroutine(TemporaryMessageRoutine(message));
-    }
+        if (NoteUI.Instance != null && NoteUI.Instance.IsOpen)
+            return true;
 
-    private IEnumerator TemporaryMessageRoutine(string message)
-    {
-        showingTemporaryMessage = true;
-        promptIsVisible = false;
+        if (NoteArchiveUI.Instance != null && NoteArchiveUI.Instance.IsOpen)
+            return true;
 
-        InteractionPromptUI.Instance?.Show(message);
+        if (InventoryUI.Instance != null && InventoryUI.Instance.IsOpen)
+            return true;
 
-        yield return new WaitForSeconds(1.2f);
-
-        InteractionPromptUI.Instance?.Hide();
-
-        showingTemporaryMessage = false;
+        return false;
     }
 
     private void OnDrawGizmosSelected()
     {
-        if (!showInteractionRange)
-            return;
-
         Gizmos.DrawWireSphere(transform.position, interactionDistance);
     }
 }
