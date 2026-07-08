@@ -16,6 +16,7 @@ public class MainMenuUI : MonoBehaviour
     [Header("Input")]
     [SerializeField] private KeyCode startKey = KeyCode.Return;
     [SerializeField] private KeyCode controlsKey = KeyCode.C;
+    [SerializeField] private KeyCode volumeKey = KeyCode.V;
     [SerializeField] private KeyCode quitKey = KeyCode.Q;
     [SerializeField] private KeyCode backKey = KeyCode.Escape;
 
@@ -24,10 +25,15 @@ public class MainMenuUI : MonoBehaviour
     [SerializeField] private float fadeOutTime = 0.8f;
 
     private bool showingControls;
+    private bool showingVolume;
     private bool isLoading;
+
+    private VolumeSettingsManager volumeSettings;
 
     private void Awake()
     {
+        volumeSettings = VolumeSettingsManager.EnsureExists();
+
         if (canvasGroup == null)
         {
             canvasGroup = GetComponent<CanvasGroup>();
@@ -58,6 +64,12 @@ public class MainMenuUI : MonoBehaviour
         if (isLoading)
             return;
 
+        if (showingVolume)
+        {
+            HandleVolumeInput();
+            return;
+        }
+
         if (showingControls)
         {
             if (Input.GetKeyDown(backKey) || Input.GetKeyDown(controlsKey))
@@ -80,6 +92,12 @@ public class MainMenuUI : MonoBehaviour
             return;
         }
 
+        if (Input.GetKeyDown(volumeKey))
+        {
+            ShowVolumeText();
+            return;
+        }
+
         if (Input.GetKeyDown(quitKey))
         {
             QuitGame();
@@ -87,9 +105,33 @@ public class MainMenuUI : MonoBehaviour
         }
     }
 
+    private void HandleVolumeInput()
+    {
+        if (Input.GetKeyDown(backKey) || Input.GetKeyDown(volumeKey))
+        {
+            ShowMainMenuText();
+            return;
+        }
+
+        if (Input.GetKeyDown(KeyCode.A) || Input.GetKeyDown(KeyCode.LeftArrow))
+        {
+            volumeSettings.DecreaseVolume();
+            ShowVolumeText();
+            return;
+        }
+
+        if (Input.GetKeyDown(KeyCode.D) || Input.GetKeyDown(KeyCode.RightArrow))
+        {
+            volumeSettings.IncreaseVolume();
+            ShowVolumeText();
+            return;
+        }
+    }
+
     private void ShowMainMenuText()
     {
         showingControls = false;
+        showingVolume = false;
 
         if (bodyText == null)
             return;
@@ -97,12 +139,14 @@ public class MainMenuUI : MonoBehaviour
         bodyText.text =
             "Enter - Iniciar demo\n\n" +
             "C - Ver controles\n\n" +
+            "V - Volumen\n\n" +
             "Q - Salir";
     }
 
     private void ShowControlsText()
     {
         showingControls = true;
+        showingVolume = false;
 
         if (bodyText == null)
             return;
@@ -121,10 +165,32 @@ public class MainMenuUI : MonoBehaviour
             "Escape - Volver";
     }
 
+    private void ShowVolumeText()
+    {
+        showingControls = false;
+        showingVolume = true;
+
+        if (volumeSettings == null)
+        {
+            volumeSettings = VolumeSettingsManager.EnsureExists();
+        }
+
+        if (bodyText == null)
+            return;
+
+        bodyText.text =
+            "VOLUMEN\n\n" +
+            "Volumen actual: " + volumeSettings.MasterVolumePercent + "%\n\n" +
+            "A / Flecha izquierda - Bajar\n" +
+            "D / Flecha derecha - Subir\n\n" +
+            "Escape o V - Volver";
+    }
+
     private IEnumerator StartGameRoutine()
     {
         isLoading = true;
         showingControls = false;
+        showingVolume = false;
 
         if (canvasGroup != null)
         {

@@ -13,17 +13,23 @@ public class PauseMenuUI : MonoBehaviour
     [Header("Input")]
     [SerializeField] private KeyCode pauseKey = KeyCode.Escape;
     [SerializeField] private KeyCode controlsKey = KeyCode.C;
+    [SerializeField] private KeyCode volumeKey = KeyCode.V;
     [SerializeField] private KeyCode restartKey = KeyCode.R;
     [SerializeField] private KeyCode quitKey = KeyCode.Q;
 
     private bool isPaused;
     private bool showingControls;
+    private bool showingVolume;
+
+    private VolumeSettingsManager volumeSettings;
 
     public bool IsPaused => isPaused;
 
     private void Awake()
     {
         Instance = this;
+
+        volumeSettings = VolumeSettingsManager.EnsureExists();
 
         if (canvasGroup == null)
         {
@@ -50,6 +56,12 @@ public class PauseMenuUI : MonoBehaviour
         if (!isPaused)
             return;
 
+        if (showingVolume)
+        {
+            HandleVolumeInput();
+            return;
+        }
+
         if (Input.GetKeyDown(controlsKey))
         {
             ToggleControlsScreen();
@@ -58,6 +70,12 @@ public class PauseMenuUI : MonoBehaviour
 
         if (showingControls)
             return;
+
+        if (Input.GetKeyDown(volumeKey))
+        {
+            ShowVolumeText();
+            return;
+        }
 
         if (Input.GetKeyDown(restartKey))
         {
@@ -76,7 +94,7 @@ public class PauseMenuUI : MonoBehaviour
     {
         if (isPaused)
         {
-            if (showingControls)
+            if (showingControls || showingVolume)
             {
                 ShowMainPauseText();
                 return;
@@ -92,6 +110,29 @@ public class PauseMenuUI : MonoBehaviour
         PauseGame();
     }
 
+    private void HandleVolumeInput()
+    {
+        if (Input.GetKeyDown(volumeKey))
+        {
+            ShowMainPauseText();
+            return;
+        }
+
+        if (Input.GetKeyDown(KeyCode.A) || Input.GetKeyDown(KeyCode.LeftArrow))
+        {
+            volumeSettings.DecreaseVolume();
+            ShowVolumeText();
+            return;
+        }
+
+        if (Input.GetKeyDown(KeyCode.D) || Input.GetKeyDown(KeyCode.RightArrow))
+        {
+            volumeSettings.IncreaseVolume();
+            ShowVolumeText();
+            return;
+        }
+    }
+
     public void PauseGame()
     {
         if (isPaused)
@@ -99,6 +140,7 @@ public class PauseMenuUI : MonoBehaviour
 
         isPaused = true;
         showingControls = false;
+        showingVolume = false;
 
         Time.timeScale = 0f;
 
@@ -115,6 +157,7 @@ public class PauseMenuUI : MonoBehaviour
 
         isPaused = false;
         showingControls = false;
+        showingVolume = false;
 
         Time.timeScale = 1f;
 
@@ -136,6 +179,7 @@ public class PauseMenuUI : MonoBehaviour
     private void ShowMainPauseText()
     {
         showingControls = false;
+        showingVolume = false;
 
         if (menuBodyText == null)
             return;
@@ -143,13 +187,16 @@ public class PauseMenuUI : MonoBehaviour
         menuBodyText.text =
             "Escape - Continuar\n\n" +
             "C - Ver controles\n\n" +
-            "R - Reiniciar\n\n" +
+            "V - Volumen\n\n" +
+            "R - Reiniciar escena\n\n" +
+            "M - Menú principal\n\n" +
             "Q - Salir del juego";
     }
 
     private void ShowControlsText()
     {
         showingControls = true;
+        showingVolume = false;
 
         if (menuBodyText == null)
             return;
@@ -166,7 +213,30 @@ public class PauseMenuUI : MonoBehaviour
             "Click izquierdo - Disparar\n" +
             "R - Recargar\n\n" +
             "Escape - Volver\n" +
-            "C - Volver al menú de pausa";
+            "C - Volver al menú de pausa\n" +
+            "V - Volumen\n" +
+            "M - Menú principal";
+    }
+
+    private void ShowVolumeText()
+    {
+        showingControls = false;
+        showingVolume = true;
+
+        if (volumeSettings == null)
+        {
+            volumeSettings = VolumeSettingsManager.EnsureExists();
+        }
+
+        if (menuBodyText == null)
+            return;
+
+        menuBodyText.text =
+            "VOLUMEN\n\n" +
+            "Volumen actual: " + volumeSettings.MasterVolumePercent + "%\n\n" +
+            "A / Flecha izquierda - Bajar\n" +
+            "D / Flecha derecha - Subir\n\n" +
+            "Escape o V - Volver";
     }
 
     private void ShowPauseMenu()
