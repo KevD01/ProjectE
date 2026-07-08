@@ -1,27 +1,50 @@
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 public class PauseMenuUI : MonoBehaviour
 {
     public static PauseMenuUI Instance;
 
-    [Header("Referencias")]
+    [Header("Escenas")]
+    [SerializeField] private string mainMenuSceneName = "MainMenu";
+
+    [Header("Referencias generales")]
     [SerializeField] private CanvasGroup canvasGroup;
-    [SerializeField] private TMP_Text menuBodyText;
+    [SerializeField] private TMP_Text pauseTitleText;
+
+    [Header("Paneles")]
+    [SerializeField] private GameObject mainPausePanel;
+    [SerializeField] private GameObject controlsPanel;
+    [SerializeField] private GameObject settingsPanel;
+
+    [Header("Botones principales")]
+    [SerializeField] private Button resumeButton;
+    [SerializeField] private Button controlsButton;
+    [SerializeField] private Button settingsButton;
+    [SerializeField] private Button restartButton;
+    [SerializeField] private Button mainMenuButton;
+    [SerializeField] private Button quitButton;
+
+    [Header("Botones para volver")]
+    [SerializeField] private Button controlsBackButton;
+    [SerializeField] private Button settingsBackButton;
+
+    [Header("Selección del panel de ajustes")]
+    [SerializeField] private Selectable settingsFirstSelectable;
 
     [Header("Input")]
     [SerializeField] private KeyCode pauseKey = KeyCode.Escape;
-    [SerializeField] private KeyCode controlsKey = KeyCode.C;
-    [SerializeField] private KeyCode volumeKey = KeyCode.V;
-    [SerializeField] private KeyCode restartKey = KeyCode.R;
-    [SerializeField] private KeyCode quitKey = KeyCode.Q;
 
     private bool isPaused;
-    private bool showingControls;
-    private bool showingVolume;
+    private bool isChangingScene;
 
-    private VolumeSettingsManager volumeSettings;
+    private GameObject currentPanel;
+
+    private CursorLockMode previousCursorLockMode;
+    private bool previousCursorVisible;
 
     public bool IsPaused => isPaused;
 
@@ -29,217 +52,219 @@ public class PauseMenuUI : MonoBehaviour
     {
         Instance = this;
 
-        volumeSettings = VolumeSettingsManager.EnsureExists();
-
         if (canvasGroup == null)
         {
             canvasGroup = GetComponent<CanvasGroup>();
         }
 
+        ConfigureButtons();
         HidePauseMenuInstant();
     }
 
     private void Update()
     {
-        if (GameOverUI.Instance != null && GameOverUI.Instance.IsGameOver)
+        if (isChangingScene)
             return;
 
-        if (EndingUI.Instance != null && EndingUI.Instance.EndingActive)
-            return;
-
-        if (Input.GetKeyDown(pauseKey))
+        if (GameOverUI.Instance != null &&
+            GameOverUI.Instance.IsGameOver)
         {
-            HandlePauseKey();
             return;
         }
+
+        if (EndingUI.Instance != null &&
+            EndingUI.Instance.EndingActive)
+        {
+            return;
+        }
+
+        if (!Input.GetKeyDown(pauseKey))
+            return;
 
         if (!isPaused)
-            return;
-
-        if (showingVolume)
         {
-            HandleVolumeInput();
-            return;
-        }
-
-        if (Input.GetKeyDown(controlsKey))
-        {
-            ToggleControlsScreen();
-            return;
-        }
-
-        if (showingControls)
-            return;
-
-        if (Input.GetKeyDown(volumeKey))
-        {
-            ShowVolumeText();
-            return;
-        }
-
-        if (Input.GetKeyDown(restartKey))
-        {
-            RestartScene();
-            return;
-        }
-
-        if (Input.GetKeyDown(quitKey))
-        {
-            QuitGame();
-            return;
-        }
-    }
-
-    private void HandlePauseKey()
-    {
-        if (isPaused)
-        {
-            if (showingControls || showingVolume)
-            {
-                ShowMainPauseText();
+            if (IsAnotherUIOpen())
                 return;
-            }
 
-            ResumeGame();
+            PauseGame();
             return;
         }
 
-        if (IsAnotherUIOpen())
+        if (currentPanel != mainPausePanel)
+        {
+            ShowMainPausePanel();
             return;
+        }
 
-        PauseGame();
+        ResumeGame();
     }
 
-    private void HandleVolumeInput()
+    private void ConfigureButtons()
     {
-        if (Input.GetKeyDown(volumeKey))
+        if (resumeButton != null)
         {
-            ShowMainPauseText();
-            return;
+            resumeButton.onClick.AddListener(ResumeGame);
         }
 
-        if (Input.GetKeyDown(KeyCode.A) || Input.GetKeyDown(KeyCode.LeftArrow))
+        if (controlsButton != null)
         {
-            volumeSettings.DecreaseVolume();
-            ShowVolumeText();
-            return;
+            controlsButton.onClick.AddListener(
+                ShowControlsPanel
+            );
         }
 
-        if (Input.GetKeyDown(KeyCode.D) || Input.GetKeyDown(KeyCode.RightArrow))
+        if (settingsButton != null)
         {
-            volumeSettings.IncreaseVolume();
-            ShowVolumeText();
-            return;
+            settingsButton.onClick.AddListener(
+                ShowSettingsPanel
+            );
+        }
+
+        if (restartButton != null)
+        {
+            restartButton.onClick.AddListener(
+                RestartScene
+            );
+        }
+
+        if (mainMenuButton != null)
+        {
+            mainMenuButton.onClick.AddListener(
+                ReturnToMainMenu
+            );
+        }
+
+        if (quitButton != null)
+        {
+            quitButton.onClick.AddListener(QuitGame);
+        }
+
+        if (controlsBackButton != null)
+        {
+            controlsBackButton.onClick.AddListener(
+                ShowMainPausePanel
+            );
+        }
+
+        if (settingsBackButton != null)
+        {
+            settingsBackButton.onClick.AddListener(
+                ShowMainPausePanel
+            );
         }
     }
 
     public void PauseGame()
     {
-        if (isPaused)
+        if (isPaused || isChangingScene)
             return;
 
         isPaused = true;
-        showingControls = false;
-        showingVolume = false;
+
+        SaveCurrentCursorState();
 
         Time.timeScale = 0f;
 
         InteractionPromptUI.Instance?.Hide();
 
-        ShowPauseMenu();
-        ShowMainPauseText();
+        ShowPauseCanvas();
+        ShowCursorForMenu();
+        ShowMainPausePanel();
     }
 
     public void ResumeGame()
     {
-        if (!isPaused)
+        if (!isPaused || isChangingScene)
             return;
 
         isPaused = false;
-        showingControls = false;
-        showingVolume = false;
 
         Time.timeScale = 1f;
 
         HidePauseMenuInstant();
+        RestorePreviousCursorState();
     }
 
-    private void ToggleControlsScreen()
+    public void ShowMainPausePanel()
     {
-        if (showingControls)
+        if (!isPaused)
+            return;
+
+        SetActivePanel(mainPausePanel);
+
+        if (pauseTitleText != null)
         {
-            ShowMainPauseText();
+            pauseTitleText.gameObject.SetActive(true);
+            pauseTitleText.text = "PAUSA";
+        }
+
+        SelectUIElement(resumeButton);
+    }
+
+    public void ShowControlsPanel()
+    {
+        if (!isPaused)
+            return;
+
+        SetActivePanel(controlsPanel);
+
+        if (pauseTitleText != null)
+        {
+            pauseTitleText.gameObject.SetActive(false);
+        }
+
+        SelectUIElement(controlsBackButton);
+    }
+
+    public void ShowSettingsPanel()
+    {
+        if (!isPaused)
+            return;
+
+        SetActivePanel(settingsPanel);
+
+        if (pauseTitleText != null)
+        {
+            pauseTitleText.gameObject.SetActive(false);
+        }
+
+        if (settingsFirstSelectable != null)
+        {
+            SelectUIElement(settingsFirstSelectable);
         }
         else
         {
-            ShowControlsText();
+            SelectUIElement(settingsBackButton);
         }
     }
 
-    private void ShowMainPauseText()
+    private void SetActivePanel(GameObject panelToShow)
     {
-        showingControls = false;
-        showingVolume = false;
-
-        if (menuBodyText == null)
-            return;
-
-        menuBodyText.text =
-            "Escape - Continuar\n\n" +
-            "C - Ver controles\n\n" +
-            "V - Volumen\n\n" +
-            "R - Reiniciar escena\n\n" +
-            "M - Menú principal\n\n" +
-            "Q - Salir del juego";
-    }
-
-    private void ShowControlsText()
-    {
-        showingControls = true;
-        showingVolume = false;
-
-        if (menuBodyText == null)
-            return;
-
-        menuBodyText.text =
-            "CONTROLES\n\n" +
-            "W / S - Caminar adelante / atrás\n" +
-            "A / D - Girar\n" +
-            "Shift - Correr\n\n" +
-            "E - Interactuar / recoger / usar\n" +
-            "I - Inventario\n" +
-            "J - Archivo de notas\n\n" +
-            "Click derecho - Apuntar\n" +
-            "Click izquierdo - Disparar\n" +
-            "R - Recargar\n\n" +
-            "Escape - Volver\n" +
-            "C - Volver al menú de pausa\n" +
-            "V - Volumen\n" +
-            "M - Menú principal";
-    }
-
-    private void ShowVolumeText()
-    {
-        showingControls = false;
-        showingVolume = true;
-
-        if (volumeSettings == null)
+        if (mainPausePanel != null)
         {
-            volumeSettings = VolumeSettingsManager.EnsureExists();
+            mainPausePanel.SetActive(
+                panelToShow == mainPausePanel
+            );
         }
 
-        if (menuBodyText == null)
-            return;
+        if (controlsPanel != null)
+        {
+            controlsPanel.SetActive(
+                panelToShow == controlsPanel
+            );
+        }
 
-        menuBodyText.text =
-            "VOLUMEN\n\n" +
-            "Volumen actual: " + volumeSettings.MasterVolumePercent + "%\n\n" +
-            "A / Flecha izquierda - Bajar\n" +
-            "D / Flecha derecha - Subir\n\n" +
-            "Escape o V - Volver";
+        if (settingsPanel != null)
+        {
+            settingsPanel.SetActive(
+                panelToShow == settingsPanel
+            );
+        }
+
+        currentPanel = panelToShow;
     }
 
-    private void ShowPauseMenu()
+    private void ShowPauseCanvas()
     {
         if (canvasGroup == null)
             return;
@@ -251,6 +276,28 @@ public class PauseMenuUI : MonoBehaviour
 
     private void HidePauseMenuInstant()
     {
+        if (mainPausePanel != null)
+        {
+            mainPausePanel.SetActive(false);
+        }
+
+        if (controlsPanel != null)
+        {
+            controlsPanel.SetActive(false);
+        }
+
+        if (settingsPanel != null)
+        {
+            settingsPanel.SetActive(false);
+        }
+
+        currentPanel = null;
+
+        if (pauseTitleText != null)
+        {
+            pauseTitleText.gameObject.SetActive(false);
+        }
+
         if (canvasGroup == null)
             return;
 
@@ -259,42 +306,133 @@ public class PauseMenuUI : MonoBehaviour
         canvasGroup.blocksRaycasts = false;
     }
 
+    private void SelectUIElement(Selectable selectable)
+    {
+        if (selectable == null)
+            return;
+
+        if (EventSystem.current == null)
+        {
+            Debug.LogWarning(
+                "No existe EventSystem en Sanatorio_Entrada."
+            );
+
+            return;
+        }
+
+        EventSystem.current.SetSelectedGameObject(null);
+        EventSystem.current.SetSelectedGameObject(
+            selectable.gameObject
+        );
+    }
+
     private bool IsAnotherUIOpen()
     {
-        if (NoteUI.Instance != null && NoteUI.Instance.IsOpen)
+        if (NoteUI.Instance != null &&
+            NoteUI.Instance.IsOpen)
+        {
             return true;
+        }
 
-        if (NoteArchiveUI.Instance != null && NoteArchiveUI.Instance.IsOpen)
+        if (NoteArchiveUI.Instance != null &&
+            NoteArchiveUI.Instance.IsOpen)
+        {
             return true;
+        }
 
-        if (InventoryUI.Instance != null && InventoryUI.Instance.IsOpen)
+        if (InventoryUI.Instance != null &&
+            InventoryUI.Instance.IsOpen)
+        {
             return true;
+        }
 
         return false;
     }
 
     private void RestartScene()
     {
+        if (isChangingScene)
+            return;
+
+        isChangingScene = true;
+        isPaused = false;
+
         Time.timeScale = 1f;
 
-        Scene currentScene = SceneManager.GetActiveScene();
+        Scene currentScene =
+            SceneManager.GetActiveScene();
+
         SceneManager.LoadScene(currentScene.name);
+    }
+
+    private void ReturnToMainMenu()
+    {
+        if (isChangingScene)
+            return;
+
+        isChangingScene = true;
+        isPaused = false;
+
+        Time.timeScale = 1f;
+
+        InteractionPromptUI.Instance?.Hide();
+
+        SceneManager.LoadScene(mainMenuSceneName);
     }
 
     private void QuitGame()
     {
+        if (isChangingScene)
+            return;
+
+        isChangingScene = true;
+        isPaused = false;
+
         Time.timeScale = 1f;
 
         Debug.Log("Saliendo del juego...");
 
+#if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+#else
         Application.Quit();
+#endif
+    }
+
+    private void SaveCurrentCursorState()
+    {
+        previousCursorLockMode = Cursor.lockState;
+        previousCursorVisible = Cursor.visible;
+    }
+
+    private void ShowCursorForMenu()
+    {
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+    }
+
+    private void RestorePreviousCursorState()
+    {
+        Cursor.lockState = previousCursorLockMode;
+        Cursor.visible = previousCursorVisible;
     }
 
     private void OnDisable()
     {
-        if (isPaused)
+        if (!isPaused || isChangingScene)
+            return;
+
+        isPaused = false;
+        Time.timeScale = 1f;
+
+        RestorePreviousCursorState();
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance == this)
         {
-            Time.timeScale = 1f;
+            Instance = null;
         }
     }
 }

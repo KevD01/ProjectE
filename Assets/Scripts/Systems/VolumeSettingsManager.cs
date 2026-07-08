@@ -14,9 +14,33 @@ public class VolumeSettingsManager : MonoBehaviour
     [SerializeField] private float volumeStep = 0.1f;
 
     private float masterVolume;
+    private static bool isApplicationQuitting;
 
     public float MasterVolume => masterVolume;
-    public int MasterVolumePercent => Mathf.RoundToInt(masterVolume * 100f);
+
+    public int MasterVolumePercent =>
+        Mathf.RoundToInt(masterVolume * 100f);
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+    private static void Bootstrap()
+    {
+        isApplicationQuitting = false;
+        EnsureExists();
+    }
+
+    public static VolumeSettingsManager EnsureExists()
+    {
+        if (Instance != null)
+            return Instance;
+
+        if (isApplicationQuitting)
+            return null;
+
+        GameObject managerObject =
+            new GameObject("VolumeSettingsManager");
+
+        return managerObject.AddComponent<VolumeSettingsManager>();
+    }
 
     private void Awake()
     {
@@ -33,18 +57,18 @@ public class VolumeSettingsManager : MonoBehaviour
         LoadVolume();
     }
 
-    public static VolumeSettingsManager EnsureExists()
+    private void OnApplicationQuit()
     {
-        if (Instance != null)
-            return Instance;
-
-        GameObject managerObject = new GameObject("VolumeSettingsManager");
-        return managerObject.AddComponent<VolumeSettingsManager>();
+        isApplicationQuitting = true;
     }
 
     private void LoadVolume()
     {
-        masterVolume = PlayerPrefs.GetFloat(MasterVolumeKey, defaultVolume);
+        masterVolume = PlayerPrefs.GetFloat(
+            MasterVolumeKey,
+            defaultVolume
+        );
+
         masterVolume = Mathf.Clamp01(masterVolume);
 
         ApplyVolume();
@@ -62,20 +86,33 @@ public class VolumeSettingsManager : MonoBehaviour
 
     public void SetVolume(float value)
     {
-        masterVolume = Mathf.Clamp01(value);
+        PreviewVolume(value);
+        SaveCurrentVolume();
+    }
 
+    public void PreviewVolume(float value)
+    {
+        masterVolume = Mathf.Clamp01(value);
         ApplyVolume();
-        SaveVolume();
+    }
+
+    public void SaveCurrentVolume()
+    {
+        PlayerPrefs.SetFloat(
+            MasterVolumeKey,
+            masterVolume
+        );
+
+        PlayerPrefs.Save();
+    }
+
+    public void ReloadSavedVolume()
+    {
+        LoadVolume();
     }
 
     private void ApplyVolume()
     {
         AudioListener.volume = masterVolume;
-    }
-
-    private void SaveVolume()
-    {
-        PlayerPrefs.SetFloat(MasterVolumeKey, masterVolume);
-        PlayerPrefs.Save();
     }
 }

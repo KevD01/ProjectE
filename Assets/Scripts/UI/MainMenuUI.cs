@@ -1,43 +1,52 @@
 using System.Collections;
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 public class MainMenuUI : MonoBehaviour
 {
     [Header("Escena del juego")]
     [SerializeField] private string gameSceneName = "Sanatorio_Entrada";
 
-    [Header("Referencias")]
+    [Header("Referencias generales")]
     [SerializeField] private CanvasGroup canvasGroup;
-    [SerializeField] private TMP_Text bodyText;
     [SerializeField] private TMP_Text loadingText;
 
-    [Header("Input")]
-    [SerializeField] private KeyCode startKey = KeyCode.Return;
-    [SerializeField] private KeyCode controlsKey = KeyCode.C;
-    [SerializeField] private KeyCode volumeKey = KeyCode.V;
-    [SerializeField] private KeyCode quitKey = KeyCode.Q;
-    [SerializeField] private KeyCode backKey = KeyCode.Escape;
+    [Header("Paneles")]
+    [SerializeField] private GameObject mainOptionsPanel;
+    [SerializeField] private GameObject controlsPanel;
+    [SerializeField] private GameObject settingsPanel;
+    [SerializeField] private GameObject creditsPanel;
+
+    [Header("Botones principales")]
+    [SerializeField] private Button startButton;
+    [SerializeField] private Button controlsButton;
+    [SerializeField] private Button settingsButton;
+    [SerializeField] private Button creditsButton;
+    [SerializeField] private Button quitButton;
+
+    [Header("Botones para volver")]
+    [SerializeField] private Button controlsBackButton;
+    [SerializeField] private Button settingsBackButton;
+    [SerializeField] private Button creditsBackButton;
 
     [Header("Transición")]
     [SerializeField] private float waitBeforeLoad = 0.6f;
     [SerializeField] private float fadeOutTime = 0.8f;
 
-    private bool showingControls;
-    private bool showingVolume;
+    private GameObject currentPanel;
     private bool isLoading;
-
-    private VolumeSettingsManager volumeSettings;
 
     private void Awake()
     {
-        volumeSettings = VolumeSettingsManager.EnsureExists();
-
         if (canvasGroup == null)
         {
             canvasGroup = GetComponent<CanvasGroup>();
         }
+
+        ConfigureButtons();
 
         if (loadingText != null)
         {
@@ -49,14 +58,9 @@ public class MainMenuUI : MonoBehaviour
     {
         Time.timeScale = 1f;
 
-        if (canvasGroup != null)
-        {
-            canvasGroup.alpha = 1f;
-            canvasGroup.interactable = true;
-            canvasGroup.blocksRaycasts = true;
-        }
-
-        ShowMainMenuText();
+        ShowCursor();
+        RestoreCanvas();
+        ShowMainOptions();
     }
 
     private void Update()
@@ -64,159 +68,184 @@ public class MainMenuUI : MonoBehaviour
         if (isLoading)
             return;
 
-        if (showingVolume)
-        {
-            HandleVolumeInput();
+        if (!Input.GetKeyDown(KeyCode.Escape))
             return;
-        }
 
-        if (showingControls)
+        if (currentPanel != mainOptionsPanel)
         {
-            if (Input.GetKeyDown(backKey) || Input.GetKeyDown(controlsKey))
-            {
-                ShowMainMenuText();
-            }
-
-            return;
-        }
-
-        if (Input.GetKeyDown(startKey))
-        {
-            StartCoroutine(StartGameRoutine());
-            return;
-        }
-
-        if (Input.GetKeyDown(controlsKey))
-        {
-            ShowControlsText();
-            return;
-        }
-
-        if (Input.GetKeyDown(volumeKey))
-        {
-            ShowVolumeText();
-            return;
-        }
-
-        if (Input.GetKeyDown(quitKey))
-        {
-            QuitGame();
-            return;
+            ShowMainOptions();
         }
     }
 
-    private void HandleVolumeInput()
+    private void ConfigureButtons()
     {
-        if (Input.GetKeyDown(backKey) || Input.GetKeyDown(volumeKey))
+        if (startButton != null)
         {
-            ShowMainMenuText();
-            return;
+            startButton.onClick.AddListener(StartGame);
         }
 
-        if (Input.GetKeyDown(KeyCode.A) || Input.GetKeyDown(KeyCode.LeftArrow))
+        if (controlsButton != null)
         {
-            volumeSettings.DecreaseVolume();
-            ShowVolumeText();
-            return;
+            controlsButton.onClick.AddListener(ShowControls);
         }
 
-        if (Input.GetKeyDown(KeyCode.D) || Input.GetKeyDown(KeyCode.RightArrow))
+        if (settingsButton != null)
         {
-            volumeSettings.IncreaseVolume();
-            ShowVolumeText();
-            return;
+            settingsButton.onClick.AddListener(ShowSettings);
+        }
+
+        if (creditsButton != null)
+        {
+            creditsButton.onClick.AddListener(ShowCredits);
+        }
+
+        if (quitButton != null)
+        {
+            quitButton.onClick.AddListener(QuitGame);
+        }
+
+        if (controlsBackButton != null)
+        {
+            controlsBackButton.onClick.AddListener(ShowMainOptions);
+        }
+
+        if (settingsBackButton != null)
+        {
+            settingsBackButton.onClick.AddListener(ShowMainOptions);
+        }
+
+        if (creditsBackButton != null)
+        {
+            creditsBackButton.onClick.AddListener(ShowMainOptions);
         }
     }
 
-    private void ShowMainMenuText()
+    public void ShowMainOptions()
     {
-        showingControls = false;
-        showingVolume = false;
-
-        if (bodyText == null)
+        if (isLoading)
             return;
 
-        bodyText.text =
-            "Enter - Iniciar demo\n\n" +
-            "C - Ver controles\n\n" +
-            "V - Volumen\n\n" +
-            "Q - Salir";
+        SetActivePanel(mainOptionsPanel);
+        SelectButton(startButton);
     }
 
-    private void ShowControlsText()
+    public void ShowControls()
     {
-        showingControls = true;
-        showingVolume = false;
-
-        if (bodyText == null)
+        if (isLoading)
             return;
 
-        bodyText.text =
-            "CONTROLES\n\n" +
-            "W / S - Caminar adelante / atrás\n" +
-            "A / D - Girar\n" +
-            "Shift - Correr\n\n" +
-            "E - Interactuar / recoger / usar\n" +
-            "I - Inventario\n" +
-            "J - Archivo de notas\n\n" +
-            "Click derecho - Apuntar\n" +
-            "Click izquierdo - Disparar\n" +
-            "R - Recargar\n\n" +
-            "Escape - Volver";
+        SetActivePanel(controlsPanel);
+        SelectButton(controlsBackButton);
     }
 
-    private void ShowVolumeText()
+    public void ShowSettings()
     {
-        showingControls = false;
-        showingVolume = true;
+        if (isLoading)
+            return;
 
-        if (volumeSettings == null)
+        SetActivePanel(settingsPanel);
+        SelectButton(settingsBackButton);
+    }
+
+    public void ShowCredits()
+    {
+        if (isLoading)
+            return;
+
+        SetActivePanel(creditsPanel);
+        SelectButton(creditsBackButton);
+    }
+
+    private void SetActivePanel(GameObject panelToShow)
+    {
+        if (mainOptionsPanel != null)
         {
-            volumeSettings = VolumeSettingsManager.EnsureExists();
+            mainOptionsPanel.SetActive(panelToShow == mainOptionsPanel);
         }
 
-        if (bodyText == null)
+        if (controlsPanel != null)
+        {
+            controlsPanel.SetActive(panelToShow == controlsPanel);
+        }
+
+        if (settingsPanel != null)
+        {
+            settingsPanel.SetActive(panelToShow == settingsPanel);
+        }
+
+        if (creditsPanel != null)
+        {
+            creditsPanel.SetActive(panelToShow == creditsPanel);
+        }
+
+        currentPanel = panelToShow;
+    }
+
+    private void SelectButton(Button buttonToSelect)
+    {
+        if (buttonToSelect == null)
             return;
 
-        bodyText.text =
-            "VOLUMEN\n\n" +
-            "Volumen actual: " + volumeSettings.MasterVolumePercent + "%\n\n" +
-            "A / Flecha izquierda - Bajar\n" +
-            "D / Flecha derecha - Subir\n\n" +
-            "Escape o V - Volver";
+        if (EventSystem.current == null)
+        {
+            Debug.LogWarning(
+                "No existe un EventSystem en la escena MainMenu."
+            );
+
+            return;
+        }
+
+        EventSystem.current.SetSelectedGameObject(null);
+        EventSystem.current.SetSelectedGameObject(buttonToSelect.gameObject);
+    }
+
+    public void StartGame()
+    {
+        if (isLoading)
+            return;
+
+        StartCoroutine(StartGameRoutine());
     }
 
     private IEnumerator StartGameRoutine()
     {
         isLoading = true;
-        showingControls = false;
-        showingVolume = false;
 
-        if (canvasGroup != null)
+        DisableAllButtons();
+
+        if (mainOptionsPanel != null)
         {
-            canvasGroup.interactable = false;
-            canvasGroup.blocksRaycasts = true;
+            mainOptionsPanel.SetActive(false);
         }
 
-        if (bodyText != null)
+        if (controlsPanel != null)
         {
-            bodyText.text = "";
+            controlsPanel.SetActive(false);
+        }
+
+        if (settingsPanel != null)
+        {
+            settingsPanel.SetActive(false);
+        }
+
+        if (creditsPanel != null)
+        {
+            creditsPanel.SetActive(false);
         }
 
         if (loadingText != null)
         {
             loadingText.gameObject.SetActive(true);
-            loadingText.text = "Cargando...";
+            loadingText.text = "CARGANDO...";
         }
 
-        yield return new WaitForSeconds(waitBeforeLoad);
-
-        yield return FadeOutTextRoutine();
+        yield return new WaitForSecondsRealtime(waitBeforeLoad);
+        yield return FadeOutRoutine();
 
         SceneManager.LoadScene(gameSceneName);
     }
 
-    private IEnumerator FadeOutTextRoutine()
+    private IEnumerator FadeOutRoutine()
     {
         if (canvasGroup == null)
             yield break;
@@ -226,10 +255,15 @@ public class MainMenuUI : MonoBehaviour
 
         while (timer < fadeOutTime)
         {
-            timer += Time.deltaTime;
-            float t = timer / fadeOutTime;
+            timer += Time.unscaledDeltaTime;
 
-            canvasGroup.alpha = Mathf.Lerp(startAlpha, 0f, t);
+            float progress = Mathf.Clamp01(timer / fadeOutTime);
+
+            canvasGroup.alpha = Mathf.Lerp(
+                startAlpha,
+                0f,
+                progress
+            );
 
             yield return null;
         }
@@ -237,9 +271,53 @@ public class MainMenuUI : MonoBehaviour
         canvasGroup.alpha = 0f;
     }
 
-    private void QuitGame()
+    private void DisableAllButtons()
     {
+        SetButtonInteractable(startButton, false);
+        SetButtonInteractable(controlsButton, false);
+        SetButtonInteractable(settingsButton, false);
+        SetButtonInteractable(creditsButton, false);
+        SetButtonInteractable(quitButton, false);
+        SetButtonInteractable(controlsBackButton, false);
+        SetButtonInteractable(settingsBackButton, false);
+        SetButtonInteractable(creditsBackButton, false);
+    }
+
+    private void SetButtonInteractable(Button button, bool interactable)
+    {
+        if (button != null)
+        {
+            button.interactable = interactable;
+        }
+    }
+
+    private void RestoreCanvas()
+    {
+        if (canvasGroup == null)
+            return;
+
+        canvasGroup.alpha = 1f;
+        canvasGroup.interactable = true;
+        canvasGroup.blocksRaycasts = true;
+    }
+
+    private void ShowCursor()
+    {
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+    }
+
+    public void QuitGame()
+    {
+        if (isLoading)
+            return;
+
         Debug.Log("Saliendo del juego...");
+
+#if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+#else
         Application.Quit();
+#endif
     }
 }

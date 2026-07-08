@@ -109,12 +109,12 @@ public class PlayerStatusHUDUI : MonoBehaviour
 
         if (playerHealth == null)
         {
-            healthText.text = "VIDA: -- / --\nESTADO: --";
+            healthText.text = "SALUD: -- / --\nESTADO: --";
             return;
         }
 
         healthText.text =
-            "VIDA: " + playerHealth.CurrentHealth + " / " + playerHealth.MaxHealth +
+            "SALUD: " + playerHealth.CurrentHealth + " / " + playerHealth.MaxHealth +
             "\nESTADO: " + playerHealth.GetHealthState();
     }
 
