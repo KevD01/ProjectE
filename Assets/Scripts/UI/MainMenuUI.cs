@@ -8,7 +8,8 @@ using UnityEngine.UI;
 public class MainMenuUI : MonoBehaviour
 {
     [Header("Escena del juego")]
-    [SerializeField] private string gameSceneName = "Sanatorio_Entrada";
+    [SerializeField] private string gameSceneName =
+        "Sanatorio_Entrada";
 
     [Header("Referencias generales")]
     [SerializeField] private CanvasGroup canvasGroup;
@@ -86,37 +87,51 @@ public class MainMenuUI : MonoBehaviour
 
         if (controlsButton != null)
         {
-            controlsButton.onClick.AddListener(ShowControls);
+            controlsButton.onClick.AddListener(
+                ShowControls
+            );
         }
 
         if (settingsButton != null)
         {
-            settingsButton.onClick.AddListener(ShowSettings);
+            settingsButton.onClick.AddListener(
+                ShowSettings
+            );
         }
 
         if (creditsButton != null)
         {
-            creditsButton.onClick.AddListener(ShowCredits);
+            creditsButton.onClick.AddListener(
+                ShowCredits
+            );
         }
 
         if (quitButton != null)
         {
-            quitButton.onClick.AddListener(QuitGame);
+            quitButton.onClick.AddListener(
+                QuitGame
+            );
         }
 
         if (controlsBackButton != null)
         {
-            controlsBackButton.onClick.AddListener(ShowMainOptions);
+            controlsBackButton.onClick.AddListener(
+                ShowMainOptions
+            );
         }
 
         if (settingsBackButton != null)
         {
-            settingsBackButton.onClick.AddListener(ShowMainOptions);
+            settingsBackButton.onClick.AddListener(
+                ShowMainOptions
+            );
         }
 
         if (creditsBackButton != null)
         {
-            creditsBackButton.onClick.AddListener(ShowMainOptions);
+            creditsBackButton.onClick.AddListener(
+                ShowMainOptions
+            );
         }
     }
 
@@ -160,22 +175,30 @@ public class MainMenuUI : MonoBehaviour
     {
         if (mainOptionsPanel != null)
         {
-            mainOptionsPanel.SetActive(panelToShow == mainOptionsPanel);
+            mainOptionsPanel.SetActive(
+                panelToShow == mainOptionsPanel
+            );
         }
 
         if (controlsPanel != null)
         {
-            controlsPanel.SetActive(panelToShow == controlsPanel);
+            controlsPanel.SetActive(
+                panelToShow == controlsPanel
+            );
         }
 
         if (settingsPanel != null)
         {
-            settingsPanel.SetActive(panelToShow == settingsPanel);
+            settingsPanel.SetActive(
+                panelToShow == settingsPanel
+            );
         }
 
         if (creditsPanel != null)
         {
-            creditsPanel.SetActive(panelToShow == creditsPanel);
+            creditsPanel.SetActive(
+                panelToShow == creditsPanel
+            );
         }
 
         currentPanel = panelToShow;
@@ -189,20 +212,25 @@ public class MainMenuUI : MonoBehaviour
         if (EventSystem.current == null)
         {
             Debug.LogWarning(
-                "No existe un EventSystem en la escena MainMenu."
+                "No existe un EventSystem en MainMenu."
             );
 
             return;
         }
 
         EventSystem.current.SetSelectedGameObject(null);
-        EventSystem.current.SetSelectedGameObject(buttonToSelect.gameObject);
+
+        EventSystem.current.SetSelectedGameObject(
+            buttonToSelect.gameObject
+        );
     }
 
     public void StartGame()
     {
         if (isLoading)
             return;
+
+        IntroCinematicUI.ResetForNewGame();
 
         StartCoroutine(StartGameRoutine());
     }
@@ -239,7 +267,10 @@ public class MainMenuUI : MonoBehaviour
             loadingText.text = "CARGANDO...";
         }
 
-        yield return new WaitForSecondsRealtime(waitBeforeLoad);
+        yield return new WaitForSecondsRealtime(
+            waitBeforeLoad
+        );
+
         yield return FadeOutRoutine();
 
         SceneManager.LoadScene(gameSceneName);
@@ -257,7 +288,8 @@ public class MainMenuUI : MonoBehaviour
         {
             timer += Time.unscaledDeltaTime;
 
-            float progress = Mathf.Clamp01(timer / fadeOutTime);
+            float progress =
+                Mathf.Clamp01(timer / fadeOutTime);
 
             canvasGroup.alpha = Mathf.Lerp(
                 startAlpha,
@@ -278,12 +310,24 @@ public class MainMenuUI : MonoBehaviour
         SetButtonInteractable(settingsButton, false);
         SetButtonInteractable(creditsButton, false);
         SetButtonInteractable(quitButton, false);
-        SetButtonInteractable(controlsBackButton, false);
-        SetButtonInteractable(settingsBackButton, false);
-        SetButtonInteractable(creditsBackButton, false);
+        SetButtonInteractable(
+            controlsBackButton,
+            false
+        );
+        SetButtonInteractable(
+            settingsBackButton,
+            false
+        );
+        SetButtonInteractable(
+            creditsBackButton,
+            false
+        );
     }
 
-    private void SetButtonInteractable(Button button, bool interactable)
+    private void SetButtonInteractable(
+        Button button,
+        bool interactable
+    )
     {
         if (button != null)
         {

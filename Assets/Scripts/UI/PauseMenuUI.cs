@@ -63,6 +63,12 @@ public class PauseMenuUI : MonoBehaviour
 
     private void Update()
     {
+        if (IntroCinematicUI.Instance != null &&
+            IntroCinematicUI.Instance.IsPlaying)
+        {
+            return;
+        }
+
         if (isChangingScene)
             return;
 
@@ -158,6 +164,12 @@ public class PauseMenuUI : MonoBehaviour
     {
         if (isPaused || isChangingScene)
             return;
+
+        if (IntroCinematicUI.Instance != null &&
+            IntroCinematicUI.Instance.IsPlaying)
+        {
+            return;
+        }
 
         isPaused = true;
 
