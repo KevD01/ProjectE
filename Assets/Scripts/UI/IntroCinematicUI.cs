@@ -1,6 +1,7 @@
 using System.Collections;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class IntroCinematicUI : MonoBehaviour
 {
@@ -12,37 +13,124 @@ public class IntroCinematicUI : MonoBehaviour
     [SerializeField] private CanvasGroup introCanvasGroup;
     [SerializeField] private TMP_Text titleText;
     [SerializeField] private TMP_Text bodyText;
+    [SerializeField] private TMP_Text locationText;
     [SerializeField] private TMP_Text skipText;
 
+    [Header("Progreso para omitir")]
+    [SerializeField] private Image skipProgressFillImage;
+
     [Header("Objetos ocultos durante la introducción")]
-    [SerializeField] private GameObject[] objectsToHideDuringIntro;
+    [SerializeField]
+    private GameObject[] objectsToHideDuringIntro;
 
     [Header("Texto")]
-    [SerializeField] private string gameTitle = "ECOS DEL SILENCIO";
+    [SerializeField]
+    private string gameTitle = "ECOS DEL SILENCIO";
 
     [TextArea(2, 5)]
-    [SerializeField] private string[] introMessages =
+    [SerializeField]
+    private string[] introMessages =
     {
-        "Hace tres días, una señal de auxilio\ncomenzó a transmitirse desde el sanatorio.",
-        "Nadie de los equipos enviados\nha regresado.",
+        "Hace tres días, una señal de auxilio\n" +
+        "comenzó a transmitirse desde el sanatorio.",
+
+        "Nadie de los equipos enviados\n" +
+        "ha regresado.",
+
         "Tu hermano fue uno de ellos."
     };
 
-    [Header("Tiempos")]
-    [SerializeField] private float initialBlackTime = 0.7f;
-    [SerializeField] private float titleFadeTime = 0.8f;
-    [SerializeField] private float titleHoldTime = 1.5f;
-    [SerializeField] private float messageFadeTime = 0.6f;
-    [SerializeField] private float messageHoldTime = 2.5f;
-    [SerializeField] private float finalFadeTime = 1.2f;
+    [SerializeField]
+    private string locationMessage =
+        "SANATORIO — 02:17 A. M.";
 
-    [Header("Omitir")]
-    [SerializeField] private KeyCode skipKey = KeyCode.Space;
+    [Header("Tiempos de textos")]
+    [Min(0f)]
+    [SerializeField]
+    private float initialBlackTime = 0.8f;
 
-    [Header("Audio opcional")]
-    [SerializeField] private AudioSource introAudioSource;
-    [SerializeField] private AudioClip introAudioClip;
-    [SerializeField] private float introAudioVolume = 0.7f;
+    [Min(0f)]
+    [SerializeField]
+    private float titleFadeTime = 0.8f;
+
+    [Min(0f)]
+    [SerializeField]
+    private float titleHoldTime = 1.6f;
+
+    [Min(0f)]
+    [SerializeField]
+    private float messageFadeTime = 0.65f;
+
+    [Min(0f)]
+    [SerializeField]
+    private float messageHoldTime = 2.5f;
+
+    [Min(0f)]
+    [SerializeField]
+    private float locationFadeTime = 0.7f;
+
+    [Min(0f)]
+    [SerializeField]
+    private float locationHoldTime = 1.7f;
+
+    [Header("Transición final")]
+    [Min(0f)]
+    [SerializeField]
+    private float finalBlackHoldTime = 0.35f;
+
+    [Min(0f)]
+    [SerializeField]
+    private float finalStingLeadTime = 0.15f;
+
+    [Min(0f)]
+    [SerializeField]
+    private float finalFadeTime = 1.6f;
+
+    [Min(0f)]
+    [SerializeField]
+    private float skipFadeTime = 0.35f;
+
+    [Header("Mantener para omitir")]
+    [SerializeField]
+    private KeyCode skipKey = KeyCode.Space;
+
+    [Min(0.1f)]
+    [SerializeField]
+    private float skipHoldDuration = 1.5f;
+
+    [Min(0f)]
+    [SerializeField]
+    private float skipResetSpeed = 2.5f;
+
+    [SerializeField]
+    private string skipIdleMessage =
+        "MANTÉN ESPACIO PARA OMITIR";
+
+    [SerializeField]
+    private string skipHoldingMessage =
+        "SIGUE MANTENIENDO";
+
+    [Header("Ambiente de introducción")]
+    [SerializeField]
+    private AudioSource introAmbienceSource;
+
+    [SerializeField]
+    private AudioClip introAmbienceClip;
+
+    [Range(0f, 1f)]
+    [SerializeField]
+    private float introAmbienceVolume = 0.55f;
+
+    [Header("Golpe sonoro final")]
+    [SerializeField]
+    private AudioSource finalStingSource;
+
+    [SerializeField]
+    private AudioClip finalStingClip;
+
+    [Range(0f, 1f)]
+    [SerializeField]
+    private float finalStingVolume = 0.8f;
 
     private PlayerTankController playerMovement;
     private PlayerWeaponController playerWeapon;
@@ -52,13 +140,28 @@ public class IntroCinematicUI : MonoBehaviour
 
     private bool[] previousObjectStates;
 
+    private CursorLockMode previousCursorLockMode;
+    private bool previousCursorVisible;
+
+    private float previousTimeScale = 1f;
+    private float skipHoldTimer;
+
     private bool isPlaying;
     private bool isCompleting;
 
-    private float previousTimeScale = 1f;
     private Coroutine introRoutine;
+    private Coroutine skipRoutine;
 
     public bool IsPlaying => isPlaying;
+
+    [RuntimeInitializeOnLoadMethod(
+        RuntimeInitializeLoadType.SubsystemRegistration
+    )]
+    private static void ResetStaticState()
+    {
+        Instance = null;
+        playedThisSession = false;
+    }
 
     private void Awake()
     {
@@ -66,8 +169,11 @@ public class IntroCinematicUI : MonoBehaviour
 
         if (introCanvasGroup == null)
         {
-            introCanvasGroup = GetComponent<CanvasGroup>();
+            introCanvasGroup =
+                GetComponent<CanvasGroup>();
         }
+
+        ResetSkipProgress();
     }
 
     private void Start()
@@ -78,7 +184,8 @@ public class IntroCinematicUI : MonoBehaviour
             return;
         }
 
-        introRoutine = StartCoroutine(PlayIntroRoutine());
+        introRoutine =
+            StartCoroutine(PlayIntroRoutine());
     }
 
     private void Update()
@@ -86,15 +193,98 @@ public class IntroCinematicUI : MonoBehaviour
         if (!isPlaying || isCompleting)
             return;
 
-        if (Input.GetKeyDown(skipKey))
-        {
-            SkipIntro();
-        }
+        UpdateHoldToSkip();
     }
 
     public static void ResetForNewGame()
     {
         playedThisSession = false;
+    }
+
+    private void UpdateHoldToSkip()
+    {
+        bool isHolding =
+            Input.GetKey(skipKey);
+
+        if (isHolding)
+        {
+            skipHoldTimer +=
+                Time.unscaledDeltaTime;
+        }
+        else
+        {
+            skipHoldTimer = Mathf.MoveTowards(
+                skipHoldTimer,
+                0f,
+                skipResetSpeed *
+                Time.unscaledDeltaTime
+            );
+        }
+
+        float progress = Mathf.Clamp01(
+            skipHoldTimer / skipHoldDuration
+        );
+
+        UpdateSkipVisuals(
+            progress,
+            isHolding
+        );
+
+        if (skipHoldTimer >= skipHoldDuration)
+        {
+            BeginSkipTransition();
+        }
+    }
+
+    private void UpdateSkipVisuals(
+        float progress,
+        bool isHolding
+    )
+    {
+        if (skipProgressFillImage != null)
+        {
+            skipProgressFillImage.fillAmount =
+                progress;
+        }
+
+        if (skipText == null)
+            return;
+
+        skipText.alpha =
+            isHolding || progress > 0f
+                ? 1f
+                : 0.65f;
+
+        if (!isHolding && progress <= 0f)
+        {
+            skipText.text = skipIdleMessage;
+            return;
+        }
+
+        int percentage =
+            Mathf.RoundToInt(progress * 100f);
+
+        skipText.text =
+            skipHoldingMessage +
+            " — " +
+            percentage +
+            "%";
+    }
+
+    private void ResetSkipProgress()
+    {
+        skipHoldTimer = 0f;
+
+        if (skipProgressFillImage != null)
+        {
+            skipProgressFillImage.fillAmount = 0f;
+        }
+
+        if (skipText != null)
+        {
+            skipText.text = skipIdleMessage;
+            skipText.alpha = 0.65f;
+        }
     }
 
     private IEnumerator PlayIntroRoutine()
@@ -105,9 +295,48 @@ public class IntroCinematicUI : MonoBehaviour
 
         PrepareGameplayForIntro();
         PrepareUI();
+        StartAmbienceAudio();
 
-        yield return new WaitForSecondsRealtime(initialBlackTime);
+        yield return new WaitForSecondsRealtime(
+            initialBlackTime
+        );
 
+        yield return PlayTitleSequence();
+        yield return PlayMessageSequence();
+        yield return PlayLocationSequence();
+
+        HideSkipInterface();
+
+        if (finalBlackHoldTime > 0f)
+        {
+            yield return new WaitForSecondsRealtime(
+                finalBlackHoldTime
+            );
+        }
+
+        PlayFinalSting();
+
+        if (finalStingLeadTime > 0f)
+        {
+            yield return new WaitForSecondsRealtime(
+                finalStingLeadTime
+            );
+        }
+
+        yield return FadeCanvasAndAmbience(
+            0f,
+            finalFadeTime
+        );
+
+        CompleteIntro();
+    }
+
+    private IEnumerator PlayTitleSequence()
+    {
+        if (titleText == null)
+            yield break;
+
+        titleText.gameObject.SetActive(true);
         titleText.text = gameTitle;
 
         yield return FadeText(
@@ -117,7 +346,9 @@ public class IntroCinematicUI : MonoBehaviour
             titleFadeTime
         );
 
-        yield return new WaitForSecondsRealtime(titleHoldTime);
+        yield return new WaitForSecondsRealtime(
+            titleHoldTime
+        );
 
         yield return FadeText(
             titleText,
@@ -127,6 +358,13 @@ public class IntroCinematicUI : MonoBehaviour
         );
 
         titleText.gameObject.SetActive(false);
+    }
+
+    private IEnumerator PlayMessageSequence()
+    {
+        if (bodyText == null)
+            yield break;
+
         bodyText.gameObject.SetActive(true);
 
         foreach (string message in introMessages)
@@ -155,13 +393,41 @@ public class IntroCinematicUI : MonoBehaviour
             );
         }
 
-        yield return FadeCanvas(
-            1f,
+        bodyText.gameObject.SetActive(false);
+    }
+
+    private IEnumerator PlayLocationSequence()
+    {
+        if (locationText == null ||
+            string.IsNullOrWhiteSpace(
+                locationMessage
+            ))
+        {
+            yield break;
+        }
+
+        locationText.gameObject.SetActive(true);
+        locationText.text = locationMessage;
+
+        yield return FadeText(
+            locationText,
             0f,
-            finalFadeTime
+            1f,
+            locationFadeTime
         );
 
-        CompleteIntro();
+        yield return new WaitForSecondsRealtime(
+            locationHoldTime
+        );
+
+        yield return FadeText(
+            locationText,
+            1f,
+            0f,
+            locationFadeTime
+        );
+
+        locationText.gameObject.SetActive(false);
     }
 
     private void PrepareGameplayForIntro()
@@ -169,16 +435,33 @@ public class IntroCinematicUI : MonoBehaviour
         previousTimeScale = Time.timeScale;
         Time.timeScale = 0f;
 
+        previousCursorLockMode =
+            Cursor.lockState;
+
+        previousCursorVisible =
+            Cursor.visible;
+
+        Cursor.lockState =
+            CursorLockMode.None;
+
+        Cursor.visible = false;
+
         GameObject player =
-            GameObject.FindGameObjectWithTag("Player");
+            GameObject.FindGameObjectWithTag(
+                "Player"
+            );
 
         if (player != null)
         {
             playerMovement =
-                player.GetComponent<PlayerTankController>();
+                player.GetComponent<
+                    PlayerTankController
+                >();
 
             playerWeapon =
-                player.GetComponent<PlayerWeaponController>();
+                player.GetComponent<
+                    PlayerWeaponController
+                >();
         }
 
         if (playerMovement != null)
@@ -225,20 +508,231 @@ public class IntroCinematicUI : MonoBehaviour
             bodyText.text = "";
         }
 
+        if (locationText != null)
+        {
+            locationText.gameObject.SetActive(false);
+            locationText.alpha = 0f;
+            locationText.text = locationMessage;
+        }
+
         if (skipText != null)
         {
             skipText.gameObject.SetActive(true);
-            skipText.alpha = 0.65f;
-            skipText.text = "ESPACIO — OMITIR";
         }
 
-        if (introAudioSource != null &&
-            introAudioClip != null)
+        SetSkipBarActive(true);
+        ResetSkipProgress();
+    }
+
+    private void StartAmbienceAudio()
+    {
+        if (introAmbienceSource == null ||
+            introAmbienceClip == null)
         {
-            introAudioSource.clip = introAudioClip;
-            introAudioSource.volume = introAudioVolume;
-            introAudioSource.loop = false;
-            introAudioSource.Play();
+            return;
+        }
+
+        introAmbienceSource.Stop();
+
+        introAmbienceSource.clip =
+            introAmbienceClip;
+
+        introAmbienceSource.volume =
+            introAmbienceVolume;
+
+        introAmbienceSource.loop = true;
+        introAmbienceSource.Play();
+    }
+
+    private void PlayFinalSting()
+    {
+        if (finalStingSource == null ||
+            finalStingClip == null)
+        {
+            return;
+        }
+
+        finalStingSource.PlayOneShot(
+            finalStingClip,
+            finalStingVolume
+        );
+    }
+
+    private void BeginSkipTransition()
+    {
+        if (isCompleting)
+            return;
+
+        isCompleting = true;
+
+        if (introRoutine != null)
+        {
+            StopCoroutine(introRoutine);
+            introRoutine = null;
+        }
+
+        HideSkipInterface();
+        PlayFinalSting();
+
+        skipRoutine =
+            StartCoroutine(
+                SkipTransitionRoutine()
+            );
+    }
+
+    private IEnumerator SkipTransitionRoutine()
+    {
+        yield return FadeCanvasAndAmbience(
+            0f,
+            skipFadeTime
+        );
+
+        CompleteIntro();
+    }
+
+    private IEnumerator FadeText(
+        TMP_Text targetText,
+        float startAlpha,
+        float endAlpha,
+        float duration
+    )
+    {
+        if (targetText == null)
+            yield break;
+
+        if (duration <= 0f)
+        {
+            targetText.alpha = endAlpha;
+            yield break;
+        }
+
+        float timer = 0f;
+        targetText.alpha = startAlpha;
+
+        while (timer < duration)
+        {
+            timer += Time.unscaledDeltaTime;
+
+            float progress =
+                Mathf.Clamp01(
+                    timer / duration
+                );
+
+            targetText.alpha = Mathf.Lerp(
+                startAlpha,
+                endAlpha,
+                progress
+            );
+
+            yield return null;
+        }
+
+        targetText.alpha = endAlpha;
+    }
+
+    private IEnumerator FadeCanvasAndAmbience(
+        float targetCanvasAlpha,
+        float duration
+    )
+    {
+        float startCanvasAlpha =
+            introCanvasGroup != null
+                ? introCanvasGroup.alpha
+                : 1f;
+
+        float startAmbienceVolume =
+            introAmbienceSource != null
+                ? introAmbienceSource.volume
+                : 0f;
+
+        if (duration <= 0f)
+        {
+            if (introCanvasGroup != null)
+            {
+                introCanvasGroup.alpha =
+                    targetCanvasAlpha;
+            }
+
+            StopAmbienceAudio();
+            yield break;
+        }
+
+        float timer = 0f;
+
+        while (timer < duration)
+        {
+            timer += Time.unscaledDeltaTime;
+
+            float progress =
+                Mathf.Clamp01(
+                    timer / duration
+                );
+
+            if (introCanvasGroup != null)
+            {
+                introCanvasGroup.alpha =
+                    Mathf.Lerp(
+                        startCanvasAlpha,
+                        targetCanvasAlpha,
+                        progress
+                    );
+            }
+
+            if (introAmbienceSource != null &&
+                introAmbienceSource.isPlaying)
+            {
+                introAmbienceSource.volume =
+                    Mathf.Lerp(
+                        startAmbienceVolume,
+                        0f,
+                        progress
+                    );
+            }
+
+            yield return null;
+        }
+
+        if (introCanvasGroup != null)
+        {
+            introCanvasGroup.alpha =
+                targetCanvasAlpha;
+        }
+
+        StopAmbienceAudio();
+    }
+
+    private void StopAmbienceAudio()
+    {
+        if (introAmbienceSource == null)
+            return;
+
+        introAmbienceSource.Stop();
+
+        introAmbienceSource.volume =
+            introAmbienceVolume;
+    }
+
+    private void HideSkipInterface()
+    {
+        if (skipText != null)
+        {
+            skipText.gameObject.SetActive(false);
+        }
+
+        SetSkipBarActive(false);
+    }
+
+    private void SetSkipBarActive(bool active)
+    {
+        if (skipProgressFillImage == null)
+            return;
+
+        Transform parent =
+            skipProgressFillImage.transform.parent;
+
+        if (parent != null)
+        {
+            parent.gameObject.SetActive(active);
         }
     }
 
@@ -248,7 +742,9 @@ public class IntroCinematicUI : MonoBehaviour
             return;
 
         previousObjectStates =
-            new bool[objectsToHideDuringIntro.Length];
+            new bool[
+                objectsToHideDuringIntro.Length
+            ];
 
         for (int i = 0;
              i < objectsToHideDuringIntro.Length;
@@ -260,7 +756,9 @@ public class IntroCinematicUI : MonoBehaviour
             if (target == null)
                 continue;
 
-            previousObjectStates[i] = target.activeSelf;
+            previousObjectStates[i] =
+                target.activeSelf;
+
             target.SetActive(false);
         }
     }
@@ -292,97 +790,6 @@ public class IntroCinematicUI : MonoBehaviour
         }
     }
 
-    private IEnumerator FadeText(
-        TMP_Text targetText,
-        float startAlpha,
-        float endAlpha,
-        float duration
-    )
-    {
-        if (targetText == null)
-            yield break;
-
-        if (duration <= 0f)
-        {
-            targetText.alpha = endAlpha;
-            yield break;
-        }
-
-        float timer = 0f;
-        targetText.alpha = startAlpha;
-
-        while (timer < duration)
-        {
-            timer += Time.unscaledDeltaTime;
-
-            float progress =
-                Mathf.Clamp01(timer / duration);
-
-            targetText.alpha = Mathf.Lerp(
-                startAlpha,
-                endAlpha,
-                progress
-            );
-
-            yield return null;
-        }
-
-        targetText.alpha = endAlpha;
-    }
-
-    private IEnumerator FadeCanvas(
-        float startAlpha,
-        float endAlpha,
-        float duration
-    )
-    {
-        if (introCanvasGroup == null)
-            yield break;
-
-        if (duration <= 0f)
-        {
-            introCanvasGroup.alpha = endAlpha;
-            yield break;
-        }
-
-        float timer = 0f;
-        introCanvasGroup.alpha = startAlpha;
-
-        while (timer < duration)
-        {
-            timer += Time.unscaledDeltaTime;
-
-            float progress =
-                Mathf.Clamp01(timer / duration);
-
-            introCanvasGroup.alpha = Mathf.Lerp(
-                startAlpha,
-                endAlpha,
-                progress
-            );
-
-            yield return null;
-        }
-
-        introCanvasGroup.alpha = endAlpha;
-    }
-
-    private void SkipIntro()
-    {
-        if (isCompleting)
-            return;
-
-        isCompleting = true;
-
-        if (introRoutine != null)
-        {
-            StopCoroutine(introRoutine);
-            introRoutine = null;
-        }
-
-        CompleteIntro();
-    }
-
     private void CompleteIntro()
     {
         if (!isPlaying && !isCompleting)
@@ -391,11 +798,11 @@ public class IntroCinematicUI : MonoBehaviour
         isPlaying = false;
         isCompleting = false;
 
-        if (introAudioSource != null &&
-            introAudioSource.isPlaying)
-        {
-            introAudioSource.Stop();
-        }
+        introRoutine = null;
+        skipRoutine = null;
+
+        ResetSkipProgress();
+        StopAmbienceAudio();
 
         Time.timeScale =
             previousTimeScale <= 0f
@@ -415,6 +822,13 @@ public class IntroCinematicUI : MonoBehaviour
         }
 
         RestoreGameplayObjects();
+
+        Cursor.lockState =
+            previousCursorLockMode;
+
+        Cursor.visible =
+            previousCursorVisible;
+
         HideInstant();
     }
 
@@ -430,12 +844,12 @@ public class IntroCinematicUI : MonoBehaviour
         gameObject.SetActive(false);
     }
 
-    private void OnDisable()
+    private void RestoreGameplayImmediately()
     {
-        if (!isPlaying)
-            return;
-
-        Time.timeScale = 1f;
+        Time.timeScale =
+            previousTimeScale <= 0f
+                ? 1f
+                : previousTimeScale;
 
         if (playerMovement != null)
         {
@@ -451,7 +865,31 @@ public class IntroCinematicUI : MonoBehaviour
 
         RestoreGameplayObjects();
 
+        Cursor.lockState =
+            previousCursorLockMode;
+
+        Cursor.visible =
+            previousCursorVisible;
+
+        StopAmbienceAudio();
+
+        if (finalStingSource != null)
+        {
+            finalStingSource.Stop();
+        }
+    }
+
+    private void OnDisable()
+    {
+        if (!isPlaying)
+            return;
+
+        RestoreGameplayImmediately();
+
         isPlaying = false;
+        isCompleting = false;
+
+        ResetSkipProgress();
     }
 
     private void OnDestroy()
